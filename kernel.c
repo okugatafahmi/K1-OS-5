@@ -49,7 +49,7 @@ void readString(char *string){
     else{
        string[i] = input;
        if (input == 0xD){
-         interrupt(0x10,0xe*0x100+10,0x0,0x0);
+         interrupt(0x10,0xE*256+10,0x0,0x0);
        }
        i++;
     }
