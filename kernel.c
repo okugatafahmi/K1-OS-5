@@ -58,14 +58,13 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
   }
 }
 
-void printStringInMemory(char *string, int color, int x, int y)
+void printStringInMemory(char *string, int x, int y)
 {
 	int i = 0;
 	while (string[i] != '\0' && string[i] != '\n')
 	{
 		int offset = 0x8000 + ((80 * y) + x) * 2;
 		putInMemory(0xB000, offset, string[i]);
-		putInMemory(0xB000, offset + 1, color);
 		i++;
 		x++;
 	}
@@ -74,14 +73,14 @@ void printStringInMemory(char *string, int color, int x, int y)
 
 void printLogo()
 {
-  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **, 0xD, 0, 0");
-  printStringInMemory("* ______                                               *, 0xD, 0, 1");
-  printStringInMemory("* | ___ \\______  _____  _________     __       ___    *, 0xD, 0, 2");
-  printStringInMemory("* | |_/ / | ___  |     | ___   ___    /  \\    |   \\  *, 0xD, 0, 3");
-  printStringInMemory("* | ___ \\| __   |     |    | |      /    \\   | | /   *, 0xD, 0, 4");
-  printStringInMemory("* | |_/ / | ___  |     |    | |     |  ||  |   |   \\  *, 0xD, 0, 5");
-  printStringInMemory("* \\____/ |_____ |     |    | |     |      |   |    \\ *, 0xD, 0, 6");
-  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **, 0xD, 0, 7");
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **", 0, 0);
+  printStringInMemory("* ______                                               *", 0, 1);
+  printStringInMemory("* | ___ \\  ______  _____  _________     __       ___    *",  0, 2);
+  printStringInMemory("* | |_/ /  | ___   |     | ___   ___    /  \\    |   \\  *",  0, 3);
+  printStringInMemory("* | ___ \\ | __    |     |    | |      /    \\   | | /   *",  0, 4);
+  printStringInMemory("* | |_/ /  | ___   |     |    | |     |  ||  |   |   \\  *",  0, 5);
+  printStringInMemory("* \\____/  |_____  |     |    | |     |      |   |    \\ *",  0, 6);
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **",0, 7);
 }
 
 void printString(char *string) {
