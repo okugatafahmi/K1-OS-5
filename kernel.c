@@ -1,3 +1,9 @@
+#define SECTOR_SIZE 512
+#define DIR_SECTOR 2
+#define DIR_ENTRY_LENGTH 32
+#define MAX_FILENAME 12
+#define MAX_FILESECTOR 20
+
 /* Ini deklarasi fungsi */
 void handleInterrupt21 (int AX, int BX, int CX, int DX);
 void printString(char *string);
@@ -123,4 +129,57 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
       // printString("Invalid interrupt");
       break;
   }
+}
+
+void readFile(char *buffer, char *filename, int *success){
+  char dir[SECTOR_SIZE];
+  int iterDir,iterFileName;
+  int iterLastByte, iterSector;
+  int found,equal; // untuk boolean file
+  // Membaca sector dir untuk membaca semua file
+  readSector(dir,DIR_SECTOR);
+
+  // Iterasi setiap file
+  found=0;
+  iterDir=0;
+  while (!found && iterDir<SECTOR_SIZE)
+  {
+    iterFileName = 0;
+    equal = 1;
+    // Mencari yang nama file-nya sama
+    while (equal && filename[iterFileName]!='\0' && iterFileName<MAX_FILENAME)
+    {
+      if (dir[iterDir+iterFileName] != filename[iterFileName])
+      {
+        equal = 0;
+      }
+      else
+      {
+        ++iterFileName;
+      }
+    }
+    if (equal)
+    {
+      found = 1;
+    }
+    else
+    {
+      iterDir += DIR_ENTRY_LENGTH;
+    }
+    
+  }
+  
+  if (found)
+  {
+    // menyimpan posisi awal sector file
+    iterLastByte = iterDir + MAX_FILENAME;
+    iterSector = 0;
+    while (iterSector<MAX_FILESECTOR && dir[iterLastByte + iterSector]!=0)
+    {
+      readSector(buffer+iterSector*SECTOR_SIZE, dir[iterLastByte+iterSector]);
+      ++iterSector;
+    }
+    
+  }
+  *success = found;
 }
