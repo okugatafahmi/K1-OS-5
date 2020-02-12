@@ -17,6 +17,8 @@ void clear(char *buffer, int length); //Fungsi untuk mengisi buffer dengan 0
 // void writeFile(char *buffer, char *filename, int *sectors) {}
 void executeProgram(char *filename, int segment, int *success);
 
+void printLogo();
+
 int main() {
   char* line;
   printLogo();
@@ -56,16 +58,30 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
   }
 }
 
+void printStringInMemory(char *string, int color, int x, int y)
+{
+	int i = 0;
+	while (string[i] != '\0' && string[i] != '\n')
+	{
+		int offset = 0x8000 + ((80 * y) + x) * 2;
+		putInMemory(0xB000, offset, string[i]);
+		putInMemory(0xB000, offset + 1, color);
+		i++;
+		x++;
+	}
+}
+
+
 void printLogo()
 {
-  printString("* * * * * * * * * * * * * * * * * * * * * * * * * * * **");
-  printString("* ______                                               *");
-  printString("* | ___ \\______  _____  _________     __       ___    *");
-  printString("* | |_/ / | ___  |     | ___   ___    /  \\    |   \\  *");
-  printString("* | ___ \\| __   |     |    | |      /    \\   | | /   *");
-  printString("* | |_/ / | ___  |     |    | |     |  ||  |   |   \\  *");
-  printString("* \\____/ |_____ |     |    | |     |      |   |    \\ *");
-  printString("* * * * * * * * * * * * * * * * * * * * * * * * * * * **");
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **, 0xD, 0, 0");
+  printStringInMemory("* ______                                               *, 0xD, 0, 1");
+  printStringInMemory("* | ___ \\______  _____  _________     __       ___    *, 0xD, 0, 2");
+  printStringInMemory("* | |_/ / | ___  |     | ___   ___    /  \\    |   \\  *, 0xD, 0, 3");
+  printStringInMemory("* | ___ \\| __   |     |    | |      /    \\   | | /   *, 0xD, 0, 4");
+  printStringInMemory("* | |_/ / | ___  |     |    | |     |  ||  |   |   \\  *, 0xD, 0, 5");
+  printStringInMemory("* \\____/ |_____ |     |    | |     |      |   |    \\ *, 0xD, 0, 6");
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **, 0xD, 0, 7");
 }
 
 void printString(char *string) {
