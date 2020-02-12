@@ -71,6 +71,7 @@ void printStringInMemory(char *string, int x, int y)
 	{
 		int offset = 0x8000 + ((80 * y) + x) * 2;
 		putInMemory(0xB000, offset, string[i]);
+    putInMemory(0xB000, offset+1, y+1);
 		i++;
 		x++;
 	}
@@ -79,14 +80,14 @@ void printStringInMemory(char *string, int x, int y)
 
 void printLogo()
 {
-  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **", 0, 0);
-  printStringInMemory("* ______                                               *", 0, 1);
-  printStringInMemory("* | ___ \\  ______  _____  _________     __       ___    *",  0, 2);
-  printStringInMemory("* | |_/ /  | ___   |     | ___   ___    /  \\    |   \\  *",  0, 3);
-  printStringInMemory("* | ___ \\ | __    |     |    | |      /    \\   | | /   *",  0, 4);
-  printStringInMemory("* | |_/ /  | ___   |     |    | |     |  ||  |   |   \\  *",  0, 5);
-  printStringInMemory("* \\____/  |_____  |     |    | |     |      |   |    \\ *",  0, 6);
-  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * **",0, 7);
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * *", 0, 0);
+  printStringInMemory("* ______                                              *", 0, 1);
+  printStringInMemory("* | ___ \\  ______  _____  _________     __      ___   *",  0, 2);
+  printStringInMemory("* | |_/ / | ___   |     | ___   ___    /  \\    |   \\  *",  0, 3);
+  printStringInMemory("* | ___ \\ | __    |     |    | |      /    \\   | | /  *",  0, 4);
+  printStringInMemory("* | |_/ / | ___   |     |    | |     |  ||  |  |   \\  *",  0, 5);
+  printStringInMemory("* \\____/  |_____  |     |    | |     |      |  |    \\ *",  0, 6);
+  printStringInMemory("* * * * * * * * * * * * * * * * * * * * * * * * * * * *",0, 7);
 }
 
 void printString(char *string) {
