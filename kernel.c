@@ -32,11 +32,20 @@ void readString(char *string){
   while(input!= 0xD){
     input = interrupt(0x16, 0x0, 0x0, 0x0);
     interrupt(0x10, (0xE * 256) + input, 0, 0);
-    string[i] = input;
-    if (input == 0xD){
-      interrupt(0x10,0xe*0x100+10,0x0,0x0);
+    if(input==0x8){                        
+       if(i > 0){
+          interrupt(0x10, 0xE*256+' ',0,0);
+          interrupt(0x10, 0xE*256+input,0,0);
+          i--;         
+       }
     }
-    i++;
+    else{
+       string[i] = input;
+       if (input == 0xD){
+         interrupt(0x10,0xe*0x100+10,0x0,0x0);
+       }
+       i++;
+    }
   }
   string[i] = 0x0;
 }
