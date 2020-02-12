@@ -5,7 +5,7 @@ void readString(char *string);
 void readSector(char *buffer, int sector);
 void writeSector(char *buffer, int sector);
 // void readFile(char *buffer, char *filename, int *success) {}
-// void clear(char *buffer, int length) {} //Fungsi untuk mengisi buffer dengan 0
+void clear(char *buffer, int length); //Fungsi untuk mengisi buffer dengan 0
 // void writeFile(char *buffer, char *filename, int *sectors) {}
 // void executeProgram(char *filename, int segment, int *success) {}
 
@@ -16,6 +16,12 @@ int main() {
   printString("hasilnya:\n\r");
   printString(line);
   while (1);
+}
+
+void clear(char *buffer, int length) {
+  for (int i = 0; i < length; i++) {
+    buffer[i] = 0x00;
+  }
 }
 
 void printString(char *string) {
