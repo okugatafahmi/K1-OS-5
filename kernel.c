@@ -19,6 +19,7 @@ void executeProgram(char *filename, int segment, int *success);
 
 int main() {
   char* line;
+  printLogo();
   printString("printString\n\r"); 
   readString(line);
   printString("hasilnya:\n\r");
@@ -53,6 +54,18 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
       printString("Invalid interrupt");
       break;
   }
+}
+
+void printLogo()
+{
+  printString("* * * * * * * * * * * * * * * * * * * * * * * * * * * **");
+  printString("* ______                                               *");
+  printString("* | ___ \\______  _____  _________     __       ___    *");
+  printString("* | |_/ / | ___  |     | ___   ___    /  \\    |   \\  *");
+  printString("* | ___ \\| __   |     |    | |      /    \\   | | /   *");
+  printString("* | |_/ / | ___  |     |    | |     |  ||  |   |   \\  *");
+  printString("* \\____/ |_____ |     |    | |     |      |   |    \\ *");
+  printString("* * * * * * * * * * * * * * * * * * * * * * * * * * * **");
 }
 
 void printString(char *string) {
