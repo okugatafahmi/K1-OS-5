@@ -1,5 +1,6 @@
 #define SECTOR_SIZE 512
 #define MAX_BYTE 256
+#define MAP_SECTOR 1
 #define DIR_SECTOR 2
 #define MAX_FILES 12
 #define DIR_ENTRY_LENGTH 32
@@ -53,7 +54,7 @@ void handleInterrupt21 (int AX, int BX, int CX, int DX) {
       readFile(BX, CX, DX);
       break;
     case 0x5:
-      // writeFile(BX, CX, DX);
+      writeFile(BX, CX, DX);
       break;
     case 0x6:
       executeProgram(BX, CX, DX);
@@ -213,6 +214,8 @@ void writeFile(char *buffer, char *filename, int *sectors){
   char dir[SECTOR_SIZE],map[SECTOR_SIZE],sectorBuffer[SECTOR_SIZE];
   int dirIndex;
 
+	readSector(map, MAP_SECTOR);
+	readSector(dir, DIR_SECTOR);  
   // mencari dir kosong
   for (dirIndex=0; dirIndex<MAX_FILES && dir[dirIndex*DIR_ENTRY_LENGTH]!='\0'; ++dirIndex){}
 
@@ -221,7 +224,7 @@ void writeFile(char *buffer, char *filename, int *sectors){
     int i,j,sector;
     // mengecek apakah banyak sector yang kosong mencukupi
     for (i=0, sector=0; i<MAX_BYTE && sector<*sectors; ++i){
-        if (map[sector]==EMPTY){
+        if (map[i]==EMPTY){
           ++sector;
         }
     }
@@ -239,7 +242,7 @@ void writeFile(char *buffer, char *filename, int *sectors){
       for (i = 0, sector = 0; i < MAX_BYTE && sector < *sectors; ++i){
         if (map[i]==EMPTY){
           map[i] = USED;
-          dir[dirIndex*DIR_ENTRY_LENGTH + MAX_FILENAME + i] = i;
+          dir[dirIndex*DIR_ENTRY_LENGTH + MAX_FILENAME + sector] = i;
           clear(sectorBuffer,SECTOR_SIZE);
           for (j = 0; j < SECTOR_SIZE; ++j){
 						sectorBuffer[j] = buffer[sector * SECTOR_SIZE + j];
@@ -248,13 +251,14 @@ void writeFile(char *buffer, char *filename, int *sectors){
 					++sector;
         }
       }
+      writeSector(map, MAP_SECTOR);
+	    writeSector(dir, DIR_SECTOR);
     }
   }
   else
   {
     *sectors = INSUFFICIENT_DIR_ENTRIES;
   }
-  
 }
 
 
