@@ -101,25 +101,26 @@ void printString(char *string) {
 void readString(char *string){
   int i = 0;
   char input = 0;  
-  while(input!= 0xD){
-    input = interrupt(0x16, 0x0, 0x0, 0x0);
-    interrupt(0x10, (0xE * 256) + input, 0, 0);
-    if(input==0x8){                        
+  while(input!= '\r'){
+    input = interrupt(0x16, 0, 0, 0,0);
+    
+    if(input=='\b'){ 
+       interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
+       interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
+       interrupt(0x10, 0xE00 + '\b', 0, 0, 0);                       
        if(i > 0){
-          interrupt(0x10, 0xE*256+' ',0,0);
-          interrupt(0x10, 0xE*256+input,0,0);
           i--;         
        }
     }
     else{
        string[i] = input;
-       if (input == 0xD){
-         interrupt(0x10,0xE*256+10,0x0,0x0);
-       }
-       i++;
+       interrupt(0x10, 0xE00 + input, 0, 0,0);
+       if (input!='\r')i++;
     }
   }
-  string[i] = 0x0;
+  string[i] = '\0';
+  interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
+  interrupt(0x10, 0xE00 + '\r', 0, 0, 0);	
 }
 
 int div(int a, int b) {
