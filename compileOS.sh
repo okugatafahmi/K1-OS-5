@@ -25,5 +25,8 @@ ld86 -o kernel -d kernel.o kernel_asm.o
 echo 'Copy kernel ke system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=3
 
+echo 'loadFile'
+./loadFile milestone1
+
 echo 'Start the emulator'
 bochs -f if2230.config
