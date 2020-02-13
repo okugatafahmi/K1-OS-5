@@ -2,7 +2,7 @@
 #define MAX_BYTE 256
 #define MAP_SECTOR 1
 #define DIR_SECTOR 2
-#define MAX_FILES 12
+#define MAX_FILES 16
 #define DIR_ENTRY_LENGTH 32
 #define MAX_FILENAME 12
 #define MAX_FILESECTOR 20
@@ -27,13 +27,22 @@ void executeProgram(char *filename, int segment, int *success);
 void printLogo();
 
 int main() {
-  char* line;
-  printLogo();
-  printString("printString\n\r"); 
-  readString(line);
-  printString("hasilnya:\n\r");
-  printString(line);
-  while (1);
+  char buffer[SECTOR_SIZE*MAX_FILESECTOR];
+  int success;
+  makeInterrupt21();
+  interrupt(0x21,0x4,buffer,"key.txt",&success);
+  if (!success){
+    interrupt(0x21,0x6,"milestone1",0x2000,&success);
+    if (success!=1){
+      interrupt(0x21,0x0,"Failed to execute milestone1\n\r",0,0);
+    }
+  }
+  else{
+    interrupt(0x21,0x0,"Key : ",0,0);
+    interrupt(0x21,0x0,buffer,0,0);
+    interrupt(0x21,0x0,"\n\r",0,0);
+  }
+  while (1){}
 }
 
 void handleInterrupt21 (int AX, int BX, int CX, int DX) {
@@ -264,7 +273,7 @@ void writeFile(char *buffer, char *filename, int *sectors){
 
 void executeProgram(char *filename, int segment, int *success) {
   int i;
-  char buffer[512 * 20];
+  char buffer[SECTOR_SIZE * MAX_FILESECTOR];
   readFile(buffer, filename, success);
   if (*success) {
     for (i = 0; i < 20*512; i++) {
