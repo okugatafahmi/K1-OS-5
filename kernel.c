@@ -207,7 +207,7 @@ void readFile(char *buffer, char *filename, int *success)
         ++iterFileName;
       }
     }
-    if (equal)
+    if (equal && dir[iterDir + iterFileName] == '\0')
     {
       found = 1;
     }
