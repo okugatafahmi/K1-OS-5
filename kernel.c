@@ -39,7 +39,7 @@ int main()
   printLogo();
   makeInterrupt21();
   interrupt(0x21, 0x4, buffer, "key.txt", &success);
-  if (success)
+  if (success==1)
   {
     interrupt(0x21, 0x0, "key.txt = ", 0, 0);
     interrupt(0x21, 0x0, buffer, 0, 0);
@@ -159,7 +159,7 @@ void readString(char *string)
 int div(int a, int b)
 {
   int count = 0;
-  while (b < a)
+  while (b <= a)
   {
     a -= b;
     count++;
@@ -169,7 +169,7 @@ int div(int a, int b)
 
 int mod(int a, int b)
 {
-  while (b < a)
+  while (b <= a)
   {
     a -= b;
   }
@@ -190,15 +190,16 @@ void writeSector(char *buffer, int sector)
 
 
 char compare2String(char* s1, char* s2){
-  for (int i = 0; i<MAX_FILENAME; ++i){
+  int i;
+  for (i = 0; i<MAX_FILENAME; ++i){
     if (s1[i]=='\0' && s2[i]=='\0') return TRUE;
     if (s1[i]!=s2[i]) return FALSE;
   }
 }
 
-int searchRecurr(char *files, char *path, char parentIndex){
+int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, char *filename){
   char depan[MAX_FILENAME];
-  char sisa[MAX_FILENAME];
+  char sisa[MAX_FILES*MAX_FILENAME];
   int i = 0,j;
   char isGoing = TRUE;
   char isFolder = FALSE;
@@ -220,28 +221,35 @@ int searchRecurr(char *files, char *path, char parentIndex){
   depan[i] = '\0';
 
   // cari yang sama
-  while(idxP<64){
-      if (files[idxP*16]==parentIndex && compare2String(files+idxP*16+2,depan)){
+  while(idxP<MAX_FILES && !isFound){
+      if (files[idxP*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxP*FILES_ENTRY_LENGTH+2,depan)){
         isFound = TRUE;
-        break;        
       }
       else ++idxP;
   }
   
   // kalau ga ketemu
-  if (!isFound) return FILE_NOT_FOUND;
-
-  if (isFolder){ // kalau folder
-    // ambil bagian belakang  
-    for (j = i+1; j<MAX_FILENAME; ++j){
-      if (path[j]=='\0') break;
-      else{
-          sisa[j-(i+1)]= path[j];
+  if (!isFound){
+    if (searchFolder) {
+      printString("1\n");
+      for (i=0; depan[i]!='\0'; ++i){
+        filename[i] = depan[i];
       }
+      filename[i] = '\0';
+      return parentIndex;
     }
-
+    else {
+      return FILE_NOT_FOUND;
+    }
+  }
+  else if (isFolder){ // kalau folder
+    // ambil bagian belakang  
+    for (j = i+1; j<MAX_FILENAME && path[j]!='\0'; ++j){
+      sisa[j-(i+1)]= path[j];
+    }
+    sisa[j-(i+1)] = '\0';
     // pass ke recurr baru
-    return searchRecurr(files, sisa, idxP);
+    return searchRecurr(files, sisa, idxP, searchFolder, filename);
   }
   else{
     return idxP;
@@ -252,13 +260,15 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
 {
   char files[2*SECTOR_SIZE];
   char sectors[SECTOR_SIZE];
+  char filename[MAX_FILENAME];
   int iterSector, idxP, idxS;
 
   readSector(files, FILES_SECTOR);
-  readSector(files+512, FILES_SECTOR+1);
+  readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
+  readSector(sectors, SECTORS_SECTOR);
   
-  idxP = searchRecurr(files, path, parentIndex);
-  if (idxP ==FILE_NOT_FOUND){
+  idxP = searchRecurr(files, path, parentIndex, 0, filename);
+  if (idxP == FILE_NOT_FOUND){
     *result = FILE_NOT_FOUND;
     return;
   }
@@ -284,14 +294,14 @@ void clear(char *buffer, int length)
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
-  char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE];
+  char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE], filename[MAX_FILENAME];
   int filesIndex, idxP, idxS;
 
   readSector(map, MAP_SECTOR);
   readSector(files, FILES_SECTOR);
   readSector(files+SECTOR_SIZE, FILES_SECTOR);
   readSector(sectors, SECTORS_SECTOR);
-  idxP = searchRecur(files, path, parentIndex);
+  idxP = searchRecurr(files, path, parentIndex, 1, filename);
 
   if (idxP == FILE_NOT_FOUND){
     *sectors = INVALID_FOLDER;
@@ -320,11 +330,12 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
     }
     else
     { // sector cukup
-      clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
-      // cari sektor file yang kosong
+      // cari sektor sektor_file yang kosong
       for (idxS = 0; idxS < MAX_SECTORS_FILESECTOR && sectorsFile[idxS*MAX_FILESECTOR] != '\0'; ++idxS)
       {
       }
+      clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
+      clear(sectors + idxS * MAX_FILESECTOR, MAX_FILESECTOR);
       files[filesIndex]  = idxP;
       files[filesIndex + 1] = idxS;
       // mengisi nama
@@ -352,7 +363,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
       }
       writeSector(map, MAP_SECTOR);
       writeSector(files, FILES_SECTOR);
-      writeSector(files + SECTOR_SIZE, FILES_SECTOR);
+      writeSector(files + SECTOR_SIZE, FILES_SECTOR+1);
       writeSector(sectorsFile, SECTORS_SECTOR);
     }
   }
