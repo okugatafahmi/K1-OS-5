@@ -277,20 +277,22 @@ void writeFile(char *buffer, char *filename, int *sectors)
         dir[dirIndex * DIR_ENTRY_LENGTH + i] = filename[i];
       }
       // mengisi sector
-      for (i = 0, sector = 0; i < MAX_BYTE && sector < *sectors; ++i)
+      i = 0; sector = 0;
+      while (i < MAX_BYTE && sector < *sectors)
       {
         if (map[i] == EMPTY)
         {
-          map[i] = USED;
-          dir[dirIndex * DIR_ENTRY_LENGTH + MAX_FILENAME + sector] = i;
           clear(sectorBuffer, SECTOR_SIZE);
           for (j = 0; j < SECTOR_SIZE; ++j)
           {
             sectorBuffer[j] = buffer[sector * SECTOR_SIZE + j];
           }
           writeSector(sectorBuffer, i);
+          dir[dirIndex * DIR_ENTRY_LENGTH + MAX_FILENAME + sector] = i;
+          map[i] = USED;
           ++sector;
         }
+        ++i; 
       }
       writeSector(map, MAP_SECTOR);
       writeSector(dir, DIR_SECTOR);
