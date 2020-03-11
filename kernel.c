@@ -1,12 +1,12 @@
 #define SECTOR_SIZE 512
-#define MAX_BYTE 256
 #define MAP_SECTOR 0x100
 #define FILES_SECTOR 0X101
 #define SECTORS_SECTOR 0x103
-#define MAX_FILES 16
-#define DIR_ENTRY_LENGTH 32
+#define MAX_FILES 64
+#define MAX_SECTORS_FILESECTOR 32
+#define FILES_ENTRY_LENGTH 16
 #define MAX_FILENAME 14
-#define MAX_FILESECTOR 20
+#define MAX_FILESECTOR 16
 #define EMPTY 0x00
 #define USED 0xFF
 #define FILE_NOT_FOUND -1
@@ -14,6 +14,8 @@
 #define INSUFFICIENT_FILES -2
 #define INSUFFICIENT_SECTORS -3
 #define INVALID_FOLDER -4
+#define TRUE 1
+#define FALSE 0
 
 /* Ini deklarasi fungsi */
 void handleInterrupt21(int AX, int BX, int CX, int DX);
@@ -189,8 +191,8 @@ void writeSector(char *buffer, int sector)
 
 char compare2String(char* s1, char* s2){
   for (int i = 0; i<MAX_FILENAME; ++i){
-    if (s1[i]=='\0' && s2[i]=='\0') return true;
-    if (s1[i]!=s2[i]) return false;
+    if (s1[i]=='\0' && s2[i]=='\0') return TRUE;
+    if (s1[i]!=s2[i]) return FALSE;
   }
 }
 
@@ -198,17 +200,17 @@ int searchRecurr(char *files, char *path, char parentIndex){
   char depan[MAX_FILENAME];
   char sisa[MAX_FILENAME];
   int i = 0,j;
-  char isGoing = true;
-  char isFolder = false;
-  char isFound = false;
+  char isGoing = TRUE;
+  char isFolder = FALSE;
+  char isFound = FALSE;
   int idxP;
   while(i<MAX_FILENAME && isGoing){
     if (path[i]=='\0'){
-      isGoing = false;
+      isGoing = FALSE;
     }
     else if (path[i]=='/'){
-      isGoing = false;
-      isFolder = true; 
+      isGoing = FALSE;
+      isFolder = TRUE; 
     }
     else{
       depan[i] = path[i];
@@ -219,8 +221,8 @@ int searchRecurr(char *files, char *path, char parentIndex){
 
   // cari yang sama
   while(idxP<64){
-      if (files[idxP*16]==parentIndex && compare2String(files+idxP*16+2)){
-        isFound = true;
+      if (files[idxP*16]==parentIndex && compare2String(files+idxP*16+2,depan)){
+        isFound = TRUE;
         break;        
       }
       else ++idxP;
@@ -250,12 +252,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
 {
   char files[2*SECTOR_SIZE];
   char sectors[SECTOR_SIZE];
-  int iterDir, iterFileName;
-  int iterLastByte, iterSector;
-  int found, equal; // untuk boolean file
-  // Membaca sector dir untuk membaca semua file
-  int idxP;
-  int idxS;
+  int iterSector, idxP, idxS;
 
   readSector(files, FILES_SECTOR);
   readSector(files+512, FILES_SECTOR+1);
@@ -273,7 +270,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
     readSector(buffer + iterSector * SECTOR_SIZE, sectors[idxS + iterSector]);
     ++iterSector;
   }
-  *success = found;
+  *result = 1;
 }
 
 void clear(char *buffer, int length)
@@ -287,65 +284,81 @@ void clear(char *buffer, int length)
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
-  char dir[SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE];
-  int dirIndex;
+  char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE];
+  int filesIndex, idxP, idxS;
 
   readSector(map, MAP_SECTOR);
-  readSector(dir, DIR_SECTOR);
-  // mencari dir kosong
-  for (dirIndex = 0; dirIndex < MAX_FILES && dir[dirIndex * DIR_ENTRY_LENGTH] != '\0'; ++dirIndex)
+  readSector(files, FILES_SECTOR);
+  readSector(files+SECTOR_SIZE, FILES_SECTOR);
+  readSector(sectors, SECTORS_SECTOR);
+  idxP = searchRecur(files, path, parentIndex);
+
+  if (idxP == FILE_NOT_FOUND){
+    *sectors = INVALID_FOLDER;
+    return;
+  }
+  // mencari sektor files kosong
+  for (filesIndex = 0; filesIndex < MAX_FILES && files[filesIndex * FILES_ENTRY_LENGTH + 2] != '\0'; ++filesIndex)
   {
   }
 
-  if (dirIndex < MAX_FILES)
+  if (filesIndex < MAX_FILES)
   {
-    int i, j, sector;
+    int i, j, emptySector;
     // mengecek apakah banyak sector yang kosong mencukupi
-    for (i = 0, sector = 0; i < MAX_BYTE && sector < *sectors; ++i)
+    for (i = 0, emptySector = 0; i < SECTOR_SIZE && emptySector < *sectors; ++i)
     {
       if (map[i] == EMPTY)
       {
-        ++sector;
+        ++emptySector;
       }
     }
 
-    if (sector < *sectors)
+    if (emptySector < *sectors)
     { // sector tidak cukup
       *sectors = INSUFFICIENT_SECTORS;
     }
     else
     { // sector cukup
-      clear(dir + dirIndex * DIR_ENTRY_LENGTH, DIR_ENTRY_LENGTH);
-      // mengisi nama
-      for (i = 0; i < MAX_FILENAME && filename[i] != '\0'; ++i)
+      clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
+      // cari sektor file yang kosong
+      for (idxS = 0; idxS < MAX_SECTORS_FILESECTOR && sectorsFile[idxS*MAX_FILESECTOR] != '\0'; ++idxS)
       {
-        dir[dirIndex * DIR_ENTRY_LENGTH + i] = filename[i];
+      }
+      files[filesIndex]  = idxP;
+      files[filesIndex + 1] = idxS;
+      // mengisi nama
+      for (i = 0; i < MAX_FILENAME && path[i] != '\0'; ++i)
+      {
+        files[filesIndex * FILES_ENTRY_LENGTH + 2 + i] = filename[i];
       }
       // mengisi sector
-      i = 0; sector = 0;
-      while (i < MAX_BYTE && sector < *sectors)
+      i = 0; emptySector = 0;
+      while (i < SECTOR_SIZE && emptySector < *sectors)
       {
         if (map[i] == EMPTY)
         {
           clear(sectorBuffer, SECTOR_SIZE);
           for (j = 0; j < SECTOR_SIZE; ++j)
           {
-            sectorBuffer[j] = buffer[sector * SECTOR_SIZE + j];
+            sectorBuffer[j] = buffer[emptySector * SECTOR_SIZE + j];
           }
           writeSector(sectorBuffer, i);
-          dir[dirIndex * DIR_ENTRY_LENGTH + MAX_FILENAME + sector] = i;
+          sectorsFile[idxS + emptySector] = i;
           map[i] = USED;
-          ++sector;
+          ++emptySector;
         }
         ++i; 
       }
       writeSector(map, MAP_SECTOR);
-      writeSector(dir, DIR_SECTOR);
+      writeSector(files, FILES_SECTOR);
+      writeSector(files + SECTOR_SIZE, FILES_SECTOR);
+      writeSector(sectorsFile, SECTORS_SECTOR);
     }
   }
   else
   {
-    *sectors = INSUFFICIENT_DIR_ENTRIES;
+    *sectors = INSUFFICIENT_FILES;
   }
 }
 
@@ -353,7 +366,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
 {
   int i;
   char buffer[SECTOR_SIZE * MAX_FILESECTOR];
-  readFile(buffer, filename, success);
+  readFile(buffer, filename, success, parentIndex);
   if (*success)
   {
     for (i = 0; i < 20 * 512; i++)
