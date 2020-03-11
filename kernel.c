@@ -5,7 +5,7 @@
 #define SECTORS_SECTOR 0x103
 #define MAX_FILES 16
 #define DIR_ENTRY_LENGTH 32
-#define MAX_FILENAME 12
+#define MAX_FILENAME 14
 #define MAX_FILESECTOR 20
 #define EMPTY 0x00
 #define USED 0xFF
@@ -186,54 +186,92 @@ void writeSector(char *buffer, int sector)
             mod(div(sector, 18), 2) * 0x100);
 }
 
+
+char compare2String(char* s1, char* s2){
+  for (int i = 0; i<MAX_FILENAME; ++i){
+    if (s1[i]=='\0' && s2[i]=='\0') return true;
+    if (s1[i]!=s2[i]) return false;
+  }
+}
+
+int searchRecurr(char *files, char *path, char parentIndex){
+  char depan[MAX_FILENAME];
+  char sisa[MAX_FILENAME];
+  int i = 0,j;
+  char isGoing = true;
+  char isFolder = false;
+  char isFound = false;
+  int idxP;
+  while(i<MAX_FILENAME && isGoing){
+    if (path[i]=='\0'){
+      isGoing = false;
+    }
+    else if (path[i]=='/'){
+      isGoing = false;
+      isFolder = true; 
+    }
+    else{
+      depan[i] = path[i];
+      i++;
+    }
+  }
+  depan[i] = '\0';
+
+  // cari yang sama
+  while(idxP<64){
+      if (files[idxP*16]==parentIndex && compare2String(files+idxP*16+2)){
+        isFound = true;
+        break;        
+      }
+      else ++idxP;
+  }
+  
+  // kalau ga ketemu
+  if (!isFound) return FILE_NOT_FOUND;
+
+  if (isFolder){ // kalau folder
+    // ambil bagian belakang  
+    for (j = i+1; j<MAX_FILENAME; ++j){
+      if (path[j]=='\0') break;
+      else{
+          sisa[j-(i+1)]= path[j];
+      }
+    }
+
+    // pass ke recurr baru
+    return searchRecurr(files, sisa, idxP);
+  }
+  else{
+    return idxP;
+  }
+}
+
 void readFile(char *buffer, char *path, int *result, char parentIndex)
 {
-  char dir[SECTOR_SIZE];
+  char files[2*SECTOR_SIZE];
+  char sectors[SECTOR_SIZE];
   int iterDir, iterFileName;
   int iterLastByte, iterSector;
   int found, equal; // untuk boolean file
   // Membaca sector dir untuk membaca semua file
-  readSector(dir, DIR_SECTOR);
+  int idxP;
+  int idxS;
 
-  // Iterasi setiap file
-  found = 0;
-  iterDir = 0;
-  while (!found && iterDir < SECTOR_SIZE)
-  {
-    iterFileName = 0;
-    equal = 1;
-    // Mencari yang nama file-nya sama
-    while (equal && filename[iterFileName] != '\0' && iterFileName < MAX_FILENAME)
-    {
-      if (dir[iterDir + iterFileName] != filename[iterFileName])
-      {
-        equal = 0;
-      }
-      else
-      {
-        ++iterFileName;
-      }
-    }
-    if (equal && dir[iterDir + iterFileName] == '\0')
-    {
-      found = 1;
-    }
-    else
-    {
-      iterDir += DIR_ENTRY_LENGTH;
-    }
+  readSector(files, FILES_SECTOR);
+  readSector(files+512, FILES_SECTOR+1);
+  
+  idxP = searchRecurr(files, path, parentIndex);
+  if (idxP ==FILE_NOT_FOUND){
+    *result = FILE_NOT_FOUND;
+    return;
   }
 
-  if (found)
+  idxS = files[idxP+1];
+  iterSector = 0;
+  while (iterSector < MAX_FILESECTOR && sectors[idxS + iterSector] != 0)
   {
-    // menyimpan posisi awal sector file
-    iterLastByte = iterDir + MAX_FILENAME;
-    iterSector = 0;
-    while (iterSector < MAX_FILESECTOR && dir[iterLastByte + iterSector] != 0)
-    {
-      readSector(buffer + iterSector * SECTOR_SIZE, dir[iterLastByte + iterSector]);
-      ++iterSector;
-    }
+    readSector(buffer + iterSector * SECTOR_SIZE, sectors[idxS + iterSector]);
+    ++iterSector;
   }
   *success = found;
 }
