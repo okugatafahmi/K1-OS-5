@@ -1,7 +1,5 @@
-
+*
+!*.*
 bochsout.txt
-*.img
+system.img
 *.o
-kernel
-bootloader
-loadFile
