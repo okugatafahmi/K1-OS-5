@@ -1,15 +1,19 @@
 #define SECTOR_SIZE 512
 #define MAX_BYTE 256
-#define MAP_SECTOR 1
-#define DIR_SECTOR 2
+#define MAP_SECTOR 0x100
+#define FILES_SECTOR 0X101
+#define SECTORS_SECTOR 0x103
 #define MAX_FILES 16
 #define DIR_ENTRY_LENGTH 32
 #define MAX_FILENAME 12
 #define MAX_FILESECTOR 20
 #define EMPTY 0x00
 #define USED 0xFF
-#define INSUFFICIENT_SECTORS 0
-#define INSUFFICIENT_DIR_ENTRIES -1
+#define FILE_NOT_FOUND -1
+#define FILE_HAS_EXIST -1
+#define INSUFFICIENT_FILES -2
+#define INSUFFICIENT_SECTORS -3
+#define INVALID_FOLDER -4
 
 /* Ini deklarasi fungsi */
 void handleInterrupt21(int AX, int BX, int CX, int DX);
@@ -19,10 +23,10 @@ int div(int, int);
 int mod(int, int);
 void readSector(char *buffer, int sector);
 void writeSector(char *buffer, int sector);
-void readFile(char *buffer, char *filename, int *success);
+void readFile(char *buffer, char *path, int *result, char parentIndex);
 void clear(char *buffer, int length); //Fungsi untuk mengisi buffer dengan 0
-void writeFile(char *buffer, char *filename, int *sectors);
-void executeProgram(char *filename, int segment, int *success);
+void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
+void executeProgram(char *path, int segment, int *result, char parentIndex);
 
 void printLogo();
 
@@ -52,7 +56,10 @@ int main()
 
 void handleInterrupt21(int AX, int BX, int CX, int DX)
 {
-  switch (AX)
+  char AL, AH;
+  AL = (char) (AX);
+  AH = (char) (AX >> 8);
+  switch (AL)
   {
   case 0x0:
     printString(BX);
@@ -67,13 +74,13 @@ void handleInterrupt21(int AX, int BX, int CX, int DX)
     writeSector(BX, CX);
     break;
   case 0x4:
-    readFile(BX, CX, DX);
+    readFile(BX, CX, DX, AH);
     break;
   case 0x5:
-    writeFile(BX, CX, DX);
+    writeFile(BX, CX, DX, AH);
     break;
   case 0x6:
-    executeProgram(BX, CX, DX);
+    executeProgram(BX, CX, DX, AH);
     break;
   default:
     printString("Invalid interrupt");
@@ -179,7 +186,7 @@ void writeSector(char *buffer, int sector)
             mod(div(sector, 18), 2) * 0x100);
 }
 
-void readFile(char *buffer, char *filename, int *success)
+void readFile(char *buffer, char *path, int *result, char parentIndex)
 {
   char dir[SECTOR_SIZE];
   int iterDir, iterFileName;
@@ -240,7 +247,7 @@ void clear(char *buffer, int length)
   }
 }
 
-void writeFile(char *buffer, char *filename, int *sectors)
+void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
   char dir[SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE];
   int dirIndex;
@@ -304,7 +311,7 @@ void writeFile(char *buffer, char *filename, int *sectors)
   }
 }
 
-void executeProgram(char *filename, int segment, int *success)
+void executeProgram(char *filename, int segment, int *success, char parentIndex)
 {
   int i;
   char buffer[SECTOR_SIZE * MAX_FILESECTOR];
