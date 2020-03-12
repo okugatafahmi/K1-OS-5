@@ -34,50 +34,15 @@ void printLogo();
 
 int main()
 {
-  char buffer[SECTOR_SIZE * MAX_FILESECTOR];
-  int success, sector=1;
+  char buffer[SECTOR_SIZE * MAX_FILESECTOR], command[SECTOR_SIZE];
+  int success;
   printLogo();
   makeInterrupt21();
   interrupt(0x21, 0x4 + 0xFF00, buffer, "key.txt", &success);
-  if (success==1)
-  {
-    interrupt(0x21, 0x0, "key.txt = ", 0, 0);
-    interrupt(0x21, 0x0, buffer, 0, 0);
-    interrupt(0x21, 0x0, "\n\r", 0, 0);
+  while (1){
+    printString("Anda mau apa: ");
+    readString(command);
   }
-  else
-  {
-    // interrupt(0x21, 0x6 +0xFF00, "milestone1", 0x2000, &success);
-    // if (success != 1)
-    // {
-    //   interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
-    // }
-  }
-  success = 0;
-  interrupt(0x21, 0x5 + 0xFF00, "Nulis file", "tulis.txt", &sector);
-  if (sector >=0){
-    printString("Mantap\n\r");
-  }
-  else if (sector == FILE_HAS_EXIST){
-    printString("-1\n\r");
-  }
-  else if (sector == INSUFFICIENT_FILES){
-    printString("-2\n\r");
-  }
-  else if (sector == INSUFFICIENT_SECTORS){
-    printString("-3\n\r");
-  }
-  else if (sector == INVALID_FOLDER){
-    printString("-4\n\r");
-  }
-  interrupt(0x21, 0x4 + 0xFF00, buffer, "tulis.txt", &success);
-  if (success==1)
-  {
-    interrupt(0x21, 0x0, "tulis.txt = ", 0, 0);
-    interrupt(0x21, 0x0, buffer, 0, 0);
-    interrupt(0x21, 0x0, "\n\r", 0, 0);
-  }
-  while (1);
 }
 
 void handleInterrupt21(int AX, int BX, int CX, int DX)
@@ -323,8 +288,8 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 
   readSector(map, MAP_SECTOR);
   readSector(files, FILES_SECTOR);
-  readSector(files+SECTOR_SIZE, FILES_SECTOR);
-  readSector(sectors, SECTORS_SECTOR);
+  readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
+  readSector(sectorsFile, SECTORS_SECTOR);
   idxP = searchRecurr(files, path, parentIndex, 1, filename);
 
   if (idxP == FILE_NOT_FOUND){
@@ -359,9 +324,9 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
       {
       }
       clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
-      clear(sectors + idxS * MAX_FILESECTOR, MAX_FILESECTOR);
-      files[filesIndex]  = idxP;
-      files[filesIndex + 1] = idxS;
+      clear(sectorsFile + idxS * MAX_FILESECTOR, MAX_FILESECTOR);
+      files[filesIndex * FILES_ENTRY_LENGTH]  = idxP;
+      files[filesIndex * FILES_ENTRY_LENGTH + 1] = idxS;
       // mengisi nama
       for (i = 0; i < MAX_FILENAME && path[i] != '\0'; ++i)
       {
@@ -379,9 +344,8 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
             sectorBuffer[j] = buffer[emptySector * SECTOR_SIZE + j];
           }
           writeSector(sectorBuffer, i);
-          sectorsFile[idxS * MAX_FILESECTOR + emptySector] = i;
+          sectorsFile[idxS * MAX_FILESECTOR + emptySector++] = i;
           map[i] = USED;
-          ++emptySector;
         }
         ++i; 
       }
