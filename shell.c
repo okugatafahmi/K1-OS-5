@@ -34,6 +34,7 @@ int main(){
 	int idxNow = 0xFF;
 	char isFound;
 	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[MAX_FILENAME];
+	char files[2*SECTOR_SIZE];
 
 	// nama root
 	namaNow[0] = '/';
@@ -43,6 +44,9 @@ int main(){
 	pathNow[0] = '/';
 	pathNow[1] = '\0';
 	idxPathNow = 1;
+	
+	readSector(files, FILES_SECTOR);
+  	readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
 
 	while(isRun){
 		printString(pathNow);
