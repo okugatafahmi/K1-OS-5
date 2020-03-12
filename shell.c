@@ -28,12 +28,12 @@ char compare2String(char* s1, char* s2);
 int main(){
 	char isRun = true;
 	char success;
-	char command[SECTOR_SIZE];
+	char command[MAX_FILENAME];
 	int type, i, idxPathNow;
 	int idxNext, parentIndex;
 	int idxNow = 0xFF;
 	char isFound;
-	char namaNow[SECTOR_SIZE], temp[SECTOR_SIZE], pathNow[SECTOR_SIZE];
+	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[MAX_FILENAME];
 
 	// nama root
 	namaNow[0] = '/';
@@ -61,7 +61,7 @@ int main(){
 				}
 
 				// ganti nama folder
-				for (i = 0; i<SECTOR_SIZE; ++i){
+				for (i = 0; i<MAX_FILENAME; ++i){
 					namafile[i] = files[idxNow*FILES_ENTRY_LENGTH+2+i];
 				}
 			}
