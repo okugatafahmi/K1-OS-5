@@ -210,6 +210,7 @@ int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, c
   depan[i] = '\0';
 
   // cari yang sama
+  idxP = 0;
   while(idxP<MAX_FILES && !isFound){
       if (files[idxP*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxP*FILES_ENTRY_LENGTH+2,depan)){
         isFound = TRUE;
