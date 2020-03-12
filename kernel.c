@@ -35,10 +35,10 @@ void printLogo();
 int main()
 {
   char buffer[SECTOR_SIZE * MAX_FILESECTOR];
-  int success;
+  int success, sector=1;
   printLogo();
   makeInterrupt21();
-  interrupt(0x21, 0x4, buffer, "key.txt", &success);
+  interrupt(0x21, 0x4 + 0xFF00, buffer, "key.txt", &success);
   if (success==1)
   {
     interrupt(0x21, 0x0, "key.txt = ", 0, 0);
@@ -47,11 +47,35 @@ int main()
   }
   else
   {
-    interrupt(0x21, 0x6, "milestone1", 0x2000, &success);
-    if (success != 1)
-    {
-      interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
-    }
+    // interrupt(0x21, 0x6 +0xFF00, "milestone1", 0x2000, &success);
+    // if (success != 1)
+    // {
+    //   interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
+    // }
+  }
+  success = 0;
+  interrupt(0x21, 0x5 + 0xFF00, "Nulis file", "tulis.txt", &sector);
+  if (sector >=0){
+    printString("Mantap\n\r");
+  }
+  else if (sector == FILE_HAS_EXIST){
+    printString("-1\n\r");
+  }
+  else if (sector == INSUFFICIENT_FILES){
+    printString("-2\n\r");
+  }
+  else if (sector == INSUFFICIENT_SECTORS){
+    printString("-3\n\r");
+  }
+  else if (sector == INVALID_FOLDER){
+    printString("-4\n\r");
+  }
+  interrupt(0x21, 0x4 + 0xFF00, buffer, "tulis.txt", &success);
+  if (success==1)
+  {
+    interrupt(0x21, 0x0, "tulis.txt = ", 0, 0);
+    interrupt(0x21, 0x0, buffer, 0, 0);
+    interrupt(0x21, 0x0, "\n\r", 0, 0);
   }
   while (1);
 }
@@ -230,8 +254,8 @@ int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, c
   
   // kalau ga ketemu
   if (!isFound){
-    if (searchFolder) {
-      printString("1\n");
+    // untuk write file
+    if (searchFolder && path[i]=='\0') {
       for (i=0; depan[i]!='\0'; ++i){
         filename[i] = depan[i];
       }
@@ -273,11 +297,11 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
     return;
   }
 
-  idxS = files[idxP+1];
+  idxS = files[idxP * FILES_ENTRY_LENGTH+1];
   iterSector = 0;
-  while (iterSector < MAX_FILESECTOR && sectors[idxS + iterSector] != 0)
+  while (iterSector < MAX_FILESECTOR && sectors[idxS * MAX_FILESECTOR + iterSector] != 0)
   {
-    readSector(buffer + iterSector * SECTOR_SIZE, sectors[idxS + iterSector]);
+    readSector(buffer + iterSector * SECTOR_SIZE, sectors[idxS * MAX_FILESECTOR + iterSector]);
     ++iterSector;
   }
   *result = 1;
@@ -355,7 +379,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
             sectorBuffer[j] = buffer[emptySector * SECTOR_SIZE + j];
           }
           writeSector(sectorBuffer, i);
-          sectorsFile[idxS + emptySector] = i;
+          sectorsFile[idxS * MAX_FILESECTOR + emptySector] = i;
           map[i] = USED;
           ++emptySector;
         }

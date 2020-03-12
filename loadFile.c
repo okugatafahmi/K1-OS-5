@@ -5,7 +5,7 @@
 // This should be compiled with gcc and run outside of the OS
 
 #include <stdio.h>
-#define SSIZE 512
+#define SECTOR_SIZE 512
 void main(int argc, char* argv[]) {
   int i;
 
@@ -31,27 +31,24 @@ void main(int argc, char* argv[]) {
   }
 
   // load the disk map
-  char map[SSIZE];
-  fseek(floppy, SSIZE * 0x100, SEEK_SET);
-  for (i = 0; i < SSIZE; i++) map[i] = fgetc(floppy);
+  char map[SECTOR_SIZE];
+  fseek(floppy, SECTOR_SIZE * 0x100, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE; i++) map[i] = fgetc(floppy);
 
   // load the directory
-  char dir[SSIZE * 2];
-  fseek(floppy, SSIZE * 0x101, SEEK_SET);
-  for (i = 0; i < SSIZE * 2; i++) dir[i] = fgetc(floppy);
+  char dir[SECTOR_SIZE * 2];
+  fseek(floppy, SECTOR_SIZE * 0x101, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE * 2; i++) dir[i] = fgetc(floppy);
 
   // load sector
-  char sector[SSIZE];
-  fseek(floppy, SSIZE * 0x103, SEEK_SET);
-  for (i = 0; i < SSIZE; i++)
-  {
-    sector[i] = fgetc(floppy);
-  }
+  char sector[SECTOR_SIZE];
+  fseek(floppy, SECTOR_SIZE * 0x103, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE; i++) sector[i] = fgetc(floppy);
   
   // find a free entry in the directory
-  for (i = 0; i < SSIZE * 2; i = i + 0x10)
+  for (i = 0; i < SECTOR_SIZE * 2; i = i + 0x10)
     if (dir[i] == 0 ) break;
-  if (i == SSIZE * 2) {
+  if (i == SECTOR_SIZE * 2) {
     printf("Not enough room in directory\n");
     return;
   }
@@ -65,12 +62,23 @@ void main(int argc, char* argv[]) {
     dir[dirindex + i + 2] = argv[1][i];
   }
 
-  dirindex = dirindex + 12;
+  // find empty sector file
+  for (i = 0; i < 32; i++)
+  {
+    if (sector[i * 16] == 0) break;
+  }
+  if (i == 32) {
+    printf("Not enough room in directory entry\n");
+    return;
+  }
+  dir[dirindex] = 0xFF;
+  dir[dirindex + 1] = i;
+  int sectindex = i;
 
   // find free sectors and add them to the file
   int sectcount = 0;
   while (!feof(loadFil)) {
-    if (sectcount == 20) {
+    if (sectcount == 16) {
       printf("Not enough space in directory entry for file\n");
       return;
     }
@@ -84,31 +92,18 @@ void main(int argc, char* argv[]) {
     }
 
     // mark the map entry as taken
-    // map[i] = 0xFF;
-    for (i = 0; i < 32; i++)
-    {
-      if (sector[i * 16] == 0) break;
-    }
-    if (i == 32) {
-      printf("Not entry has been selected\n");
-      return;
-    }
-    dir[dirindex] = 0xFF;
-    dir[dirindex + 1] = i;
+    map[i] = 0xFF;
+    
 
     // mark the sector in the directory entry
-    // dir[dirindex] = i;
-    // dirindex++;
-    // sectcount++;
-
-    sector[i * 16 + sectcount] = i;
+    sector[sectindex * 16 + sectcount] = i;
     sectcount++;
 
     printf("Loaded %s to sector %d\n", argv[1], i);
 
     // move to the sector and write to it
-    fseek(floppy, i * SSIZE, SEEK_SET);
-    for (i = 0; i < SSIZE; i++) {
+    fseek(floppy, i * SECTOR_SIZE, SEEK_SET);
+    for (i = 0; i < SECTOR_SIZE; i++) {
       if (feof(loadFil)) {
         fputc(0x0, floppy);
         break;
@@ -120,14 +115,14 @@ void main(int argc, char* argv[]) {
   }
 
   // write the map and directory back to the floppy image
-  fseek(floppy, SSIZE * 0x100, SEEK_SET);
-  for (i = 0; i < SSIZE; i++) fputc(map[i], floppy);
+  fseek(floppy, SECTOR_SIZE * 0x100, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE; i++) fputc(map[i], floppy);
 
-  fseek(floppy, SSIZE * 0x101, SEEK_SET);
-  for (i = 0; i < SSIZE * 0x103; i++) fputc(dir[i], floppy);
+  fseek(floppy, SECTOR_SIZE * 0x101, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE * 2; i++) fputc(dir[i], floppy);
 
-  fseek(floppy, SSIZE * 0x103, SEEK_SET);
-  for (i = 0; i < SSIZE; i++) fputc(sector[i], floppy);
+  fseek(floppy, SECTOR_SIZE * 0x103, SEEK_SET);
+  for (i = 0; i < SECTOR_SIZE; i++) fputc(sector[i], floppy);
 
   fclose(floppy);
   fclose(loadFil);
