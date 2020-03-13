@@ -3,7 +3,7 @@ for file in "$@"
 do
     filename="${file%.*}"
     echo "Compile $file"
-    bcc -ansi -c -o "$filename".o "$file"
+    bcc -ansi -c -o "$filename".o "$file" || exit 1
 
     echo "Link $filename.o and lib_asm.o"
     ld86 -o "$filename" -d "$filename".o lib_asm.o

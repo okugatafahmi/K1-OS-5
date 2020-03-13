@@ -33,12 +33,12 @@ void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files);
 int main(){
 	char isRun = TRUE;
 	char success;
-	char command[MAX_FILENAME];
+	char command[MAX_FILENAME*MAX_FILES];
 	int type, i;
 	int idxNext, parentIndex;
 	int idxNow = 0xFF;
 	char isFound;
-	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[SECTOR_SIZE];
+	char pathNow[MAX_FILENAME*MAX_FILES];
 	char files[2*SECTOR_SIZE];
 	char history[3*MAX_FILENAME];
 
@@ -47,10 +47,6 @@ int main(){
 	for (i = 0; i<3*MAX_FILENAME; ++i){
 		history[i] = '\0';
 	}
-
-	// nama root
-	namaNow[0] = '/';
-	namaNow[1] = '\0';
 
 	// path awal = root (/)
 	pathNow[0] = '/';
@@ -84,7 +80,11 @@ int main(){
 			break;
 		
 		default:
-			interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
+			i = findIdxFilename(command, 1, files);
+			if (i == -1)
+				interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
+			else
+				interrupt(0x21, (0x1 << 8) | 0x6, command, 0x2000, &success);
 			break;
 		}
 
@@ -117,7 +117,7 @@ void undo(char* command, char* history, int cntIsiHistory){
 	}
 	else{
 		copyString(history+(cntIsiHistory-1)*MAX_FILENAME,command);
-		printString(command);
+		interrupt(0x21, 0x0, command, 0, 0);
 	}
 }
 
@@ -225,7 +225,7 @@ void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
 			front[i] = '\0';
 			if (compare2String(front,"..")){
 				// ke index parent
-				idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
+				if (idxPathNow != 0xFF) idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
 			}
 			else if (!compare2String(front,"."))
 			{
@@ -255,7 +255,7 @@ void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
 	front[i] = '\0';
 	if (compare2String(front,"..")){
 		// ke index parent
-		idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
+		if (idxPathNow != 0xFF) idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
 	}
 	else if (!compare2String(front,"."))
 	{
@@ -264,17 +264,17 @@ void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
 
 		if (idxPathNext != -1){
 			// ganti jadi index baru
-			idxPathNow = idxPathNext;			
-			if (*idxPathNowReal != idxPathNow){
-				*idxPathNowReal = idxPathNow;
-				clear(path, SECTOR_SIZE);
-				setPath(path, idxPathNow, 0, files);
-			}
+			idxPathNow = idxPathNext;
 		}
 		else{
 			interrupt(0x21, 0x0, front, 0, 0);
 			interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
 			return;
 		}
+	}
+	if (*idxPathNowReal != idxPathNow){
+		*idxPathNowReal = idxPathNow;
+		clear(pathNow, MAX_FILENAME*MAX_FILES);
+		setPath(pathNow, idxPathNow, 0, files);
 	}
 }

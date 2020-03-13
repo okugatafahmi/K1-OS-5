@@ -40,10 +40,10 @@ int main()
   printLogo();
   makeInterrupt21();
   while (1){
-    printString("Anda mau apa: ");
-    readString(command);
+    // printString("Anda mau apa: ");
+    // readString(command);
 
-    executeProgram(command, 0x2000, &success, 0xFF);
+    executeProgram("shell", 0x2000, &success, 0xFF);
     if (success != 1)
     {
       interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
@@ -138,6 +138,11 @@ void readString(char *string)
         i--;
       }
     }
+    else if (input == 14)
+    {
+      break;
+    }
+    
     else
     {
       string[i] = input;
@@ -146,9 +151,12 @@ void readString(char *string)
         i++;
     }
   }
-  string[i] = '\0';
-  interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
-  interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
+  if (input==14) string[i]=14;
+  else{
+    string[i] = '\0';
+    interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
+    interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
+  }
 }
 
 int div(int a, int b)
