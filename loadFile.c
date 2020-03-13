@@ -71,8 +71,11 @@ void main(int argc, char* argv[]) {
     printf("Not enough room in directory entry\n");
     return;
   }
-  dir[dirindex] = 0xFF;
   dir[dirindex + 1] = i;
+
+  for (i=0; argv[1][i]!='\0' && argv[1][i]!='.'; ++i){}
+  if (argv[1][i]=='\0') dir[dirindex] = 0x1; // put at bin folder
+  else dir[dirindex] = 0xFF;
   int sectindex = i;
 
   // find free sectors and add them to the file
