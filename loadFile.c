@@ -72,11 +72,11 @@ void main(int argc, char* argv[]) {
     return;
   }
   dir[dirindex + 1] = i;
+  int sectindex = i;
 
   for (i=0; argv[1][i]!='\0' && argv[1][i]!='.'; ++i){}
   if (argv[1][i]=='\0') dir[dirindex] = 0x1; // put at bin folder
   else dir[dirindex] = 0xFF;
-  int sectindex = i;
 
   // find free sectors and add them to the file
   int sectcount = 0;

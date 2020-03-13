@@ -40,13 +40,15 @@ int main()
   printLogo();
   makeInterrupt21();
   while (1){
-    // printString("Anda mau apa: ");
-    // readString(command);
+    printString("Anda mau apa: ");
+    readString(command);
 
-    executeProgram("shell", 0x2000, &success, 0xFF);
+    executeProgram(command, 0x2000, &success, 0x01);
     if (success != 1)
     {
-      interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
+      interrupt(0x21, 0x0, "Failed to execute ", 0, 0);
+      interrupt(0x21, 0x0, command, 0,0);
+      interrupt(0x21, 0x0, "\n\r", 0, 0);
     }
   }
 }
@@ -299,7 +301,8 @@ void clear(char *buffer, int length)
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
   char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE], filename[MAX_FILENAME];
-  int filesIndex, idxP, idxS;
+  int filesIndex, idxP, idxS, i;
+  char duplicate;
 
   readSector(map, MAP_SECTOR);
   readSector(files, FILES_SECTOR);
@@ -311,12 +314,25 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
     *sectors = INVALID_FOLDER;
     return;
   }
-  // mencari sektor files kosong
-  for (filesIndex = 0; filesIndex < MAX_FILES && files[filesIndex * FILES_ENTRY_LENGTH + 2] != '\0'; ++filesIndex)
+  // mencari sektor files kosong dan tidak duplikat
+  filesIndex = -1; duplicate = FALSE;
+  for (i = 0; i < MAX_FILES && !duplicate; ++i)
   {
+    if (files[i * FILES_ENTRY_LENGTH + 2] != '\0' && filesIndex == -1)
+    {
+      filesIndex = i;
+    }
+    else if (files[i * FILES_ENTRY_LENGTH] == idxP && compare2String(files[i * FILES_ENTRY_LENGTH + 2], filename))
+    {
+      duplicate = TRUE;
+    }
   }
 
-  if (filesIndex < MAX_FILES)
+  if (duplicate)
+  {
+    *sectors = FILE_HAS_EXIST;
+  }
+  else if (filesIndex < MAX_FILES)
   {
     int i, j, emptySector;
     // mengecek apakah banyak sector yang kosong mencukupi
@@ -381,7 +397,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
   int i;
   char buffer[SECTOR_SIZE * MAX_FILESECTOR];
   readFile(buffer, filename, success, parentIndex);
-  if (*success)
+  if (*success == 1)
   {
     for (i = 0; i < 20 * 512; i++)
     {
