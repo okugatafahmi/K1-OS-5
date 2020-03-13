@@ -16,11 +16,14 @@ dd if=files.img of=system.img bs=512 count=2 seek=257 conv=notrunc
 echo 'Copy sectors.img to system.img'
 dd if=sectors.img of=system.img bs=512 count=1 seek=259 conv=notrunc
 
-echo 'Compile kernel.c'
-bcc -ansi -c -o kernel.o kernel.c
-
 echo 'Compile kernel.asm'
 nasm -f as86 kernel.asm -o kernel_asm.o
+
+echo 'Compile lib.asm'
+nasm -f as86 lib.asm -o lib_asm.o
+
+echo 'Compile kernel.c'
+bcc -ansi -c -o kernel.o kernel.c || exit 1
 
 echo 'Link kernel.o and kernel_asm.o'
 ld86 -o kernel -d kernel.o kernel_asm.o
@@ -31,8 +34,11 @@ dd if=kernel of=system.img bs=512 conv=notrunc seek=1
 echo "Compile loadFile.c"
 gcc loadFile.c -o loadFile || exit 1
 
-echo 'Run loadFile to load key.txt to system.img'
+echo 'Load key.txt to system.img'
 ./loadFile key.txt
+
+echo 'Run cnl.sh'
+./cnl.sh shell.c || exit 1
 
 echo 'Start the emulator'
 bochs -f if2230.config

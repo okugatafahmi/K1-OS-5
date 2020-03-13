@@ -21,21 +21,24 @@
 #define EXIT_PROGRAM 2
 
 void readString(char *string);
-void printString(char *string);
 int commandType(char *command);
 char compare2String(char* s1, char* s2);
 void copyString(char* s1, char* s2);
 void undo(char* command, char* history, int cntIsiHistory);
+void clear(char *buffer, int length);
+int findIdxFilename(char *filename, int parentIndex, char *files);
+void setPath(char *path, int idxPathNow, int *iter, char *files);
+void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files);
 
 int main(){
-	char isRun = true;
+	char isRun = TRUE;
 	char success;
 	char command[MAX_FILENAME];
-	int type, i, idxPathNow;
+	int type, i;
 	int idxNext, parentIndex;
 	int idxNow = 0xFF;
 	char isFound;
-	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[MAX_FILENAME];
+	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[SECTOR_SIZE];
 	char files[2*SECTOR_SIZE];
 	char history[3*MAX_FILENAME];
 
@@ -52,13 +55,14 @@ int main(){
 	// path awal = root (/)
 	pathNow[0] = '/';
 	pathNow[1] = '\0';
-	idxPathNow = 1;
 	
-	readSector(files, FILES_SECTOR);
-  	readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
+	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+  	interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
 
 	while(isRun){
-		printString(pathNow);
+		interrupt(0x21, 0x0, "Tim Bentar:", 0, 0);
+		interrupt(0x21, 0x0, pathNow, 0, 0);
+		interrupt(0x21, 0x0, "$ ", 0, 0);
 		readString(command);
 
 		// masukin ke history
@@ -73,76 +77,37 @@ int main(){
 		}
 
 		type = commandType(command);
-		if (type==CD){
-			if (command[2]=='.'){// cd.. (asumsikan gacuma cd. doang dan input pasti benar)
-				// ke index parent
-				idxNow = files[idxNow*FILES_ENTRY_LENGTH];
-
-				// kurangi pathnya (potong belakangnya)
-				pathNow[--idxPathNow] = '\0';
-				for (i = idxPathNow-1; pathNow[i]!='/'; --i){
-					pathNow[i] = '\0';
-				}
-
-				// ganti nama folder
-				for (i = 0; i<MAX_FILENAME; ++i){
-					namafile[i] = files[idxNow*FILES_ENTRY_LENGTH+2+i];
-				}
-			}
-			else{// cd namafolder
-				// copy namafolder
-				i = 3;
-				while(command[i]!='\0'){
-					temp[i-3] = command[i];
-					i++;
-				}
-				temp[i-3] = '\0';
-
-				// go to folder yang di cd in
-				idxNext = 0;
-				isFound = FALSE;
-				parentIndex = idxNow;
-				while(idxNext<MAX_FILES && !isFound){
-			      if (files[idxNext*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxNext*FILES_ENTRY_LENGTH+2,temp)){
-			        isFound = TRUE;
-			      }
-			      else ++idxNext;
-				}
-
-				// ganti jadi index baru
-				idxNow = idxNext;
-
-				// copy namafile baru
-				for (i = 0; temp[i]!='\0'; ++i){
-					namaNow[i] = temp[i];
-					pathNow[idxPathNow++] = temp[i];
-				}
-				namaNow[i] = '\0';
-				pathNow[idxPathNow++] = '/';
-				pathNow[idxPathNow] = '\0';
-
-			}
+		switch (type)
+		{
+		case CD:
+			executeCD(command+3, &idxNow, pathNow, files);
+			break;
+		
+		default:
+			interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
+			break;
 		}
-		else if (type==RUN_FILE){ // ./namafile
-			i = 2;
-			while(command[i]!='\0'){	// copy namafile yang akan di run
-				temp[i-2] = command[i];
-				i++;
-			}
-			temp[i-2] = '\0';
-			interrupt(0x21, idxNow, temp, 0x2000, &success);
-			if (success != 1)
-		    {
-		    	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
-		    }
 
-		}
-		else if (type==EXIT_PROGRAM){
-			isRun = false;
-		}
-		else{
-			printString("input salah");
-		}
+		// if (type==RUN_FILE){ // ./namafile
+		// 	i = 2;
+		// 	while(command[i]!='\0'){	// copy namafile yang akan di run
+		// 		temp[i-2] = command[i];
+		// 		i++;
+		// 	}
+		// 	temp[i-2] = '\0';
+		// 	interrupt(0x21, idxNow, temp, 0x2000, &success);
+		// 	if (success != 1)
+		//     {
+		//     	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
+		//     }
+
+		// }
+		// else if (type==EXIT_PROGRAM){
+		// 	isRun = FALSE;
+		// }
+		// else{
+		// 	interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
+		// }
 	}
 }
 
@@ -174,19 +139,9 @@ char compare2String(char* s1, char* s2){
 
 
 int commandType(char *command){
-	if (command[0]=='c' && command[1]=='d') return CD;
+	if (command[0]=='c' && command[1]=='d' && command[2]==' ') return CD;
 	else if (command[0]=='.' && command[1]=='/') return RUN_FILE;
 	else if (compare2String("exit",command)) return EXIT_PROGRAM;
-}
-
-void printString(char *string)
-{
-  int i = 0;
-  while (string[i] != '\0')
-  {
-    interrupt(0x10, (0xE * 256) + string[i], 0, 0);
-    i++;
-  }
 }
 
 void readString(char *string)
@@ -199,11 +154,11 @@ void readString(char *string)
 
     if (input == '\b')
     {
-      interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
-      interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
-      interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
       if (i > 0)
       {
+		interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
+		interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
+		interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
         i--;
       }
     }
@@ -218,4 +173,108 @@ void readString(char *string)
   string[i] = '\0';
   interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
   interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
+}
+
+void clear(char *buffer, int length)
+{
+  int i;
+  for (i = 0; i < length; i++)
+  {
+    buffer[i] = 0x00;
+  }
+}
+
+int findIdxFilename(char *filename, int parentIndex, char *files){
+	char isFound; 
+	int idxFiles=0;
+
+	isFound = FALSE;
+	while(idxFiles<MAX_FILES && !isFound){
+		if (files[idxFiles*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxFiles*FILES_ENTRY_LENGTH+2,filename)){
+			isFound = TRUE;
+		}
+		else ++idxFiles;
+	}
+	if (isFound) return idxFiles;
+	else return -1;
+}
+
+void setPath(char *path, int idxPathNow, int *iter, char *files){
+	if (idxPathNow == 0xFF){
+		path[0] = '/';
+		*iter = 1;
+	}
+	else{
+		int i = 0;
+		setPath(path, files[idxPathNow*FILES_ENTRY_LENGTH], iter, files);
+		while(files[idxPathNow*FILES_ENTRY_LENGTH + 2 + i]!='\0'){
+			path[(*iter)] = files[idxPathNow*FILES_ENTRY_LENGTH + 2 + i];
+			++(*iter);
+			++i;
+		}
+	}
+}
+
+void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
+	int iterPath=0,i=0, parentIndex, idxPathNow = *idxPathNowReal, idxPathNext;
+	char front[MAX_FILENAME];
+
+	// copy namafolder
+	while(path[iterPath]!='\0'){
+		if (path[iterPath]=='/'){
+			front[i] = '\0';
+			if (compare2String(front,"..")){
+				// ke index parent
+				idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
+			}
+			else if (!compare2String(front,"."))
+			{
+				// go to folder yang di cd in
+				idxPathNext = findIdxFilename(front, idxPathNow, files);
+
+				if (idxPathNext != -1){
+					// ganti jadi index baru
+					idxPathNow = idxPathNext;
+				}
+				else{
+					interrupt(0x21, 0x0, front, 0, 0);
+					interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
+					return;
+				}
+			}
+			// bersihkan lagi front
+			clear(front, MAX_FILENAME);
+			i = 0;
+		}
+		else {
+			front[i] = path[iterPath];
+			++i;
+		}
+		++iterPath;
+	}
+	front[i] = '\0';
+	if (compare2String(front,"..")){
+		// ke index parent
+		idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
+	}
+	else if (!compare2String(front,"."))
+	{
+		// go to folder yang di cd in
+		idxPathNext = findIdxFilename(front, idxPathNow, files);
+
+		if (idxPathNext != -1){
+			// ganti jadi index baru
+			idxPathNow = idxPathNext;			
+			if (*idxPathNowReal != idxPathNow){
+				*idxPathNowReal = idxPathNow;
+				clear(path, SECTOR_SIZE);
+				setPath(path, idxPathNow, 0, files);
+			}
+		}
+		else{
+			interrupt(0x21, 0x0, front, 0, 0);
+			interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
+			return;
+		}
+	}
 }

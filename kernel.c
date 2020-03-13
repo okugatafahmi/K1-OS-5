@@ -29,6 +29,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
 void clear(char *buffer, int length); //Fungsi untuk mengisi buffer dengan 0
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
 void executeProgram(char *path, int segment, int *result, char parentIndex);
+char compare2String(char* s1, char* s2);
 
 void printLogo();
 
@@ -38,10 +39,15 @@ int main()
   int success;
   printLogo();
   makeInterrupt21();
-  interrupt(0x21, 0x4 + 0xFF00, buffer, "key.txt", &success);
   while (1){
     printString("Anda mau apa: ");
     readString(command);
+
+    executeProgram(command, 0x2000, &success, 0xFF);
+    if (success != 1)
+    {
+      interrupt(0x21, 0x0, "Failed to execute milestone1\n\r", 0, 0);
+    }
   }
 }
 
@@ -124,11 +130,11 @@ void readString(char *string)
 
     if (input == '\b')
     {
-      interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
-      interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
-      interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
       if (i > 0)
       {
+        interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
+        interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
+        interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
         i--;
       }
     }
