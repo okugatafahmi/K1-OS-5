@@ -38,7 +38,7 @@ int main(){
 	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[MAX_FILENAME];
 	char files[2*SECTOR_SIZE];
 	char history[3*MAX_FILENAME];
-	char tempHistory[3*MAX_FILENAME];
+
 	int cntIsiHistory = 0;
 	
 	for (i = 0; i<3*MAX_FILENAME; ++i){
@@ -63,8 +63,8 @@ int main(){
 
 		// masukin ke history
 		if (cntIsiHistory==3){ // udah penuh
-			copyString(history+MAX_FILENAME, tempHistory); // dicopy dulu 2 item terakhir
-			copyString(tempHistory,history);
+			copyString(history+MAX_FILENAME, history); // dicopy dulu 2 item terakhir
+			copyString(history+2*MAX_FILENAME,history + MAX_FILENAME);
 			copyString(command,history+2*MAX_FILENAME);
 		}
 		else{
