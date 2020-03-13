@@ -22,8 +22,10 @@
 
 void readString(char *string);
 void printString(char *string);
-int commandType(char *command
+int commandType(char *command);
 char compare2String(char* s1, char* s2);
+void copyString(char* s1, char* s2);
+void undo(char* command, char* history, int cntIsiHistory);
 
 int main(){
 	char isRun = true;
@@ -35,6 +37,13 @@ int main(){
 	char isFound;
 	char namaNow[MAX_FILENAME], temp[MAX_FILENAME], pathNow[MAX_FILENAME];
 	char files[2*SECTOR_SIZE];
+	char history[3*MAX_FILENAME];
+	char tempHistory[3*MAX_FILENAME];
+	int cntIsiHistory = 0;
+	
+	for (i = 0; i<3*MAX_FILENAME; ++i){
+		history[i] = '\0';
+	}
 
 	// nama root
 	namaNow[0] = '/';
@@ -51,6 +60,17 @@ int main(){
 	while(isRun){
 		printString(pathNow);
 		readString(command);
+
+		// masukin ke history
+		if (cntIsiHistory==3){ // udah penuh
+			copyString(history+MAX_FILENAME, tempHistory); // dicopy dulu 2 item terakhir
+			copyString(tempHistory,history);
+			copyString(command,history+2*MAX_FILENAME);
+		}
+		else{
+			copyString(command,history+cntIsiHistory*MAX_FILENAME);
+			cntIsiHistory++;
+		}
 
 		type = commandType(command);
 		if (type==CD){
@@ -124,6 +144,24 @@ int main(){
 			printString("input salah");
 		}
 	}
+}
+
+void undo(char* command, char* history, int cntIsiHistory){
+	if (cntIsiHistory==0){
+		// do nothing
+	}
+	else{
+		copyString(history+(cntIsiHistory-1)*MAX_FILENAME,command);
+		printString(command);
+	}
+}
+
+void copyString(char* s1, char* s2){// copy s1 ke s2
+	int i;
+	for (i = 0; s1[i]!='\0'; ++i){
+		s2[i] = s1[i];
+	}
+	s2[i] = '\0';
 }
 
 char compare2String(char* s1, char* s2){
