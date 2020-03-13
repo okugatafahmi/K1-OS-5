@@ -19,6 +19,7 @@
 #define CD 0
 #define RUN_FILE 1
 #define EXIT_PROGRAM 2
+#define UNDO 3
 
 void readString(char *string);
 int commandType(char *command);
@@ -78,7 +79,19 @@ int main(){
 		case CD:
 			executeCD(command+3, &idxNow, pathNow, files);
 			break;
-		
+		case RUN_FILE:
+			interrupt(0x21, (idxNow<<8) | 0x6, command+2, 0x2000, &success);
+			if (success != 1)
+		    {
+		    	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
+		    }
+			break;
+		case UNDO:
+			undo(command, history, cntIsiHistory);
+			break;
+		case EXIT_PROGRAM:
+			isRun = FALSE;
+			break;
 		default:
 			i = findIdxFilename(command, 1, files);
 			if (i == -1)
@@ -87,27 +100,6 @@ int main(){
 				interrupt(0x21, (0x1 << 8) | 0x6, command, 0x2000, &success);
 			break;
 		}
-
-		// if (type==RUN_FILE){ // ./namafile
-		// 	i = 2;
-		// 	while(command[i]!='\0'){	// copy namafile yang akan di run
-		// 		temp[i-2] = command[i];
-		// 		i++;
-		// 	}
-		// 	temp[i-2] = '\0';
-		// 	interrupt(0x21, idxNow, temp, 0x2000, &success);
-		// 	if (success != 1)
-		//     {
-		//     	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
-		//     }
-
-		// }
-		// else if (type==EXIT_PROGRAM){
-		// 	isRun = FALSE;
-		// }
-		// else{
-		// 	interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
-		// }
 	}
 }
 
@@ -142,6 +134,8 @@ int commandType(char *command){
 	if (command[0]=='c' && command[1]=='d' && command[2]==' ') return CD;
 	else if (command[0]=='.' && command[1]=='/') return RUN_FILE;
 	else if (compare2String("exit",command)) return EXIT_PROGRAM;
+	else if (compare2String("undo",command)) return UNDO;
+	else return -1;
 }
 
 void readString(char *string)
