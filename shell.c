@@ -19,13 +19,17 @@
 #define CD 0
 #define RUN_FILE 1
 #define EXIT_PROGRAM 2
-#define UNDO 3
+#define UNDO1 3
+#define UNDO2 4
+#define UNDO3 5
+
+
 
 void readString(char *string);
 int commandType(char *command);
 char compare2String(char* s1, char* s2);
 void copyString(char* s1, char* s2);
-void undo(char* command, char* history, int cntIsiHistory);
+void undo(char* command, char* history, int cntIsiHistory, int type);
 void clear(char *buffer, int length);
 int findIdxFilename(char *filename, int parentIndex, char *files);
 void setPath(char *path, int idxPathNow, int *iter, char *files);
@@ -42,6 +46,7 @@ int main(){
 	char pathNow[MAX_FILENAME*MAX_FILES];
 	char files[2*SECTOR_SIZE];
 	char history[3*MAX_FILENAME];
+	char isAfterUndo = FALSE;
 
 	int cntIsiHistory = 0;
 	
@@ -60,17 +65,28 @@ int main(){
 		interrupt(0x21, 0x0, "Tim Bentar:", 0, 0);
 		interrupt(0x21, 0x0, pathNow, 0, 0);
 		interrupt(0x21, 0x0, "$ ", 0, 0);
-		readString(command);
+		if (isAfterUndo) {
 
-		// masukin ke history
-		if (cntIsiHistory==3){ // udah penuh
-			copyString(history+MAX_FILENAME, history); // dicopy dulu 2 item terakhir
-			copyString(history+2*MAX_FILENAME,history + MAX_FILENAME);
-			copyString(command,history+2*MAX_FILENAME);
+			isAfterUndo = FALSE;
+			interrupt(0x21, 0x0, command, 0, 0);
+
 		}
-		else{
-			copyString(command,history+cntIsiHistory*MAX_FILENAME);
-			cntIsiHistory++;
+		else readString(command);
+
+
+		if (!(compare2String(command, "undo1") ||compare2String(command, "undo2") || (compare2String(command, "undo3")))){
+			interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
+  			interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
+			// masukin ke history
+			if (cntIsiHistory==3){ // udah penuh
+				copyString(history+MAX_FILENAME, history); // dicopy dulu 2 item terakhir
+				copyString(history+2*MAX_FILENAME,history + MAX_FILENAME);
+				copyString(command,history+2*MAX_FILENAME);
+			}
+			else{
+				copyString(command,history+cntIsiHistory*MAX_FILENAME);
+				cntIsiHistory++;
+			}
 		}
 
 		type = commandType(command);
@@ -86,8 +102,17 @@ int main(){
 		    	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
 		    }
 			break;
-		case UNDO:
-			undo(command, history, cntIsiHistory);
+		case UNDO1:
+			undo(command, history, cntIsiHistory, 1);
+			isAfterUndo = TRUE;
+			break;
+		case UNDO2:
+			undo(command, history, cntIsiHistory, 2);
+			isAfterUndo = TRUE;
+			break;
+		case UNDO3:
+			undo(command, history, cntIsiHistory, 3);
+			isAfterUndo = TRUE;
 			break;
 		case EXIT_PROGRAM:
 			isRun = FALSE;
@@ -103,13 +128,13 @@ int main(){
 	}
 }
 
-void undo(char* command, char* history, int cntIsiHistory){
+void undo(char* command, char* history, int cntIsiHistory, int type){
 	if (cntIsiHistory==0){
 		// do nothing
 	}
 	else{
-		copyString(history+(cntIsiHistory-1)*MAX_FILENAME,command);
-		interrupt(0x21, 0x0, command, 0, 0);
+		copyString(history+(cntIsiHistory-type)*MAX_FILENAME,command);
+		//interrupt(0x21, 0x0, command, 0, 0);
 	}
 }
 
@@ -134,7 +159,11 @@ int commandType(char *command){
 	if (command[0]=='c' && command[1]=='d' && command[2]==' ') return CD;
 	else if (command[0]=='.' && command[1]=='/') return RUN_FILE;
 	else if (compare2String("exit",command)) return EXIT_PROGRAM;
-	else if (compare2String("undo",command)) return UNDO;
+	else if (compare2String("undo1",command)) return UNDO1;
+	else if (compare2String("undo2",command)) return UNDO2;
+	else if (compare2String("undo3",command)) return UNDO3;
+
+
 	else return -1;
 }
 
@@ -165,8 +194,8 @@ void readString(char *string)
     }
   }
   string[i] = '\0';
-  interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
-  interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
+  //interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
+  //interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
 }
 
 void clear(char *buffer, int length)
