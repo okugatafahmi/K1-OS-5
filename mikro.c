@@ -18,29 +18,51 @@
 #define FALSE 0
 
 char findLastChar(char *buffer, int *idx);
+int countSector(char *buffer);
 
 int main(){
-    char buffer[SECTOR_SIZE*MAX_FILESECTOR], opsi[SECTOR_SIZE*MAX_FILESECTOR];
-    char isWrite = TRUE;
-    int idx;
+    char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[SECTOR_SIZE*MAX_FILESECTOR];
+    char isWrite = TRUE, lastC;
+    int idx,success;
 
     interrupt(0x21, 0x0, "masuk\n\r", 0, 0);
+    idx = 0;
     while (isWrite){
-        interrupt(0x21, 0x1, buffer, 0, 0);
-        if (findLastChar(buffer, &idx) == 14){
+        interrupt(0x21, 0x1, buffer+idx, 0, 0);
+        lastC = findLastChar(buffer+idx, &idx);
+        if (lastC == 24){
             buffer[idx] = '\0';
-            interrupt(0x21, 0x0, "Nama file: ", 0, 0);
-            interrupt(0x21, 0x1, buffer, 0, 0);
+            success = 0;
+            while (success!=1)
+            {
+                interrupt(0x21, 0x0, "\r\n\nNama file yang disimpan: ", 0, 0);
+                interrupt(0x21, 0x1, filename, 0, 0);
+                interrupt(0x21, (0x2 << 8) | 0x5, buffer, filename, countSector(buffer));
+                isWrite = FALSE;
+            }
+        }
+        else if (lastC == 15)
+        {
+            interrupt(0x21, 0x0, "\r\n\nNama file yang dibuka: ", 0, 0);
+            interrupt(0x21, 0x1, filename, 0, 0);
+            interrupt(0x21, (0x2 << 8) | 0x4, buffer, filename, countSector(buffer));
             isWrite = FALSE;
         }
+        
     }
 }
 
 char findLastChar(char *buffer, int *idx){
     int i;
-    for (i=0; buffer[i] != 14 || buffer[i] != 0; ++i)
+    for (i=0; buffer[i] != 24 && buffer[i] != 15 && buffer[i] != 0; ++i)
     {
     }
     *idx = i;
     return buffer[i];
+}
+
+int countSector(char *buffer){
+    int cnt=0;
+    while (buffer[cnt++]!='\0'){}
+    return cnt;
 }

@@ -140,11 +140,10 @@ void readString(char *string)
         i--;
       }
     }
-    else if (input == 14)
+    else if (input == 24 || input==15)
     {
       break;
     }
-    
     else
     {
       string[i] = input;
@@ -153,7 +152,7 @@ void readString(char *string)
         i++;
     }
   }
-  if (input==14) string[i]=14;
+  if (input==24) string[i]=24;
   else{
     string[i] = '\0';
     interrupt(0x10, 0xE00 + '\n', 0, 0, 0);

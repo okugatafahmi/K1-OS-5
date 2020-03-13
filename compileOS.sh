@@ -34,11 +34,11 @@ dd if=kernel of=system.img bs=512 conv=notrunc seek=1
 echo "Compile loadFile.c"
 gcc loadFile.c -o loadFile || exit 1
 
-echo 'Load key.txt to system.img'
-./loadFile key.txt
-
 echo 'Run cnl.sh'
 ./cnl.sh shell.c mikro.c || exit 1
+
+echo 'Load key.txt to system.img'
+./loadFile key.txt
 
 echo 'Start the emulator'
 bochs -f if2230.config
