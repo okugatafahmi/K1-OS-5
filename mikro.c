@@ -23,30 +23,68 @@ int countSector(char *buffer);
 int main(){
     char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[SECTOR_SIZE*MAX_FILESECTOR];
     char isWrite = TRUE, lastC;
-    int idx,success;
+    int idx, idxTotal,success,sector;
 
     interrupt(0x21, 0x0, "masuk\n\r", 0, 0);
-    idx = 0;
+    idx = 0; idxTotal = 0;
     while (isWrite){
-        interrupt(0x21, 0x1, buffer+idx, 0, 0);
-        lastC = findLastChar(buffer+idx, &idx);
-        if (lastC == 24){
-            buffer[idx] = '\0';
+        interrupt(0x21, 0x1, buffer+idxTotal, 0, 0);
+        lastC = findLastChar(buffer+idxTotal, &idx);
+        idxTotal += idx;
+        if (lastC == 24){ // close file
+            buffer[idxTotal] = '\0';
             success = 0;
             while (success!=1)
             {
+                sector = countSector(buffer);
                 interrupt(0x21, 0x0, "\r\n\nNama file yang disimpan: ", 0, 0);
                 interrupt(0x21, 0x1, filename, 0, 0);
-                interrupt(0x21, (0x2 << 8) | 0x5, buffer, filename, countSector(buffer));
+                interrupt(0x21, (0x2 << 8) | 0x5, buffer, filename, &sector);
+                if (sector>0){
+                    interrupt(0x21, 0x0, "File ", 0,0);
+                    interrupt(0x21, 0x0, filename, 0,0);
+                    interrupt(0x21, 0x0, " berhasil disimpan.\n\r", 0,0);
+                }
+                else if (sector == FILE_HAS_EXIST)
+                {
+                    interrupt(0x21, 0x0, "File sudah ada", 0, 0);
+                }
+                else if (sector == INSUFFICIENT_FILES)
+                {
+                    interrupt(0x21, 0x0, "Tidak cukup menampung file", 0, 0);
+                }
+                else if (sector == INSUFFICIENT_SECTORS)
+                {
+                    interrupt(0x21, 0x0, "Tidak cukup menyimpan isi file", 0, 0);
+                }
+                else if (sector == INVALID_FOLDER)
+                {
+                    interrupt(0x21, 0x0, "Folder tidak valid", 0, 0);
+                }
                 isWrite = FALSE;
             }
         }
-        else if (lastC == 15)
+        else if (lastC == 15) // open file
         {
-            interrupt(0x21, 0x0, "\r\n\nNama file yang dibuka: ", 0, 0);
-            interrupt(0x21, 0x1, filename, 0, 0);
-            interrupt(0x21, (0x2 << 8) | 0x4, buffer, filename, countSector(buffer));
-            isWrite = FALSE;
+            success = 0;
+            while (success!=1)
+            {
+                interrupt(0x21, 0x0, "\r\n\nNama file yang dibuka: ", 0, 0);
+                interrupt(0x21, 0x1, filename, 0, 0);
+                interrupt(0x21, (0x2 << 8) | 0x4, buffer, filename, &success);
+                if (success == FILE_NOT_FOUND){
+                    interrupt(0x21, 0x0, "File tidak ada", 0, 0);
+                }
+                else{
+                    interrupt(0x21, 0x0, buffer, 0, 0);
+                    findLastChar(buffer, &idxTotal);
+                }
+            }
+        }
+        else
+        {
+            buffer[idxTotal++] = '\r';
+            buffer[idxTotal++] = '\n';
         }
         
     }
@@ -62,7 +100,13 @@ char findLastChar(char *buffer, int *idx){
 }
 
 int countSector(char *buffer){
-    int cnt=0;
-    while (buffer[cnt++]!='\0'){}
-    return cnt;
+    int cnt=0,cntRes=0,i=0;
+    while (buffer[i]!='\0'){
+        if (++cnt == SECTOR_SIZE)
+        {
+            ++cntRes;
+        }
+        ++i;
+    }
+    return ++cntRes;
 }

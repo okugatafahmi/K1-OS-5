@@ -137,7 +137,7 @@ void readString(char *string)
         interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
         interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
         interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
-        i--;
+        string[i--]='\0';
       }
     }
     else if (input == 24 || input==15)
@@ -152,7 +152,7 @@ void readString(char *string)
         i++;
     }
   }
-  if (input==24) string[i]=24;
+  if (input==24 || input==15) string[i]=input;
   else{
     string[i] = '\0';
     interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
@@ -300,8 +300,7 @@ void clear(char *buffer, int length)
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
   char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE], filename[MAX_FILENAME];
-  int filesIndex, idxP, idxS, i;
-  char duplicate;
+  int filesIndex, idxP, idxS;
 
   readSector(map, MAP_SECTOR);
   readSector(files, FILES_SECTOR);
@@ -313,46 +312,28 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
     *sectors = INVALID_FOLDER;
     return;
   }
-  // mencari sektor files kosong dan tidak duplikat
-  filesIndex = -1; duplicate = FALSE;
-  for (i = 0; i < MAX_FILES && !duplicate; ++i)
-  {
-    if (files[i * FILES_ENTRY_LENGTH + 2] != '\0' && filesIndex == -1)
-    {
-      filesIndex = i;
-    }
-    else if (files[i * FILES_ENTRY_LENGTH] == idxP && compare2String(files[i * FILES_ENTRY_LENGTH + 2], filename))
-    {
-      duplicate = TRUE;
-    }
+  // kalau ternyata files[idxP*FILES_ENTRY_LENGTH+1] berupa file, berarti ada duplikat
+  else if (files[idxP*FILES_ENTRY_LENGTH+1] != 0xFF){
+    *sectors = FILE_HAS_EXIST;
+    return;
   }
 
-  if (duplicate)
-  {
-    *sectors = FILE_HAS_EXIST;
-  }
-  else if (filesIndex < MAX_FILES)
+  // mencari sektor files kosong
+  for (filesIndex = 0; filesIndex < MAX_FILES && files[filesIndex * FILES_ENTRY_LENGTH + 2] != '\0'; ++filesIndex){}
+
+  if (filesIndex < MAX_FILES)
   {
     int i, j, emptySector;
-    // mengecek apakah banyak sector yang kosong mencukupi
-    for (i = 0, emptySector = 0; i < SECTOR_SIZE && emptySector < *sectors; ++i)
+    // cari sektor sektor_file yang kosong
+    for (idxS = 0; idxS < MAX_SECTORS_FILESECTOR && sectorsFile[idxS*MAX_FILESECTOR] != '\0'; ++idxS)
     {
-      if (map[i] == EMPTY)
-      {
-        ++emptySector;
-      }
     }
-
-    if (emptySector < *sectors)
+    if (idxS == MAX_SECTORS_FILESECTOR)
     { // sector tidak cukup
       *sectors = INSUFFICIENT_SECTORS;
     }
     else
     { // sector cukup
-      // cari sektor sektor_file yang kosong
-      for (idxS = 0; idxS < MAX_SECTORS_FILESECTOR && sectorsFile[idxS*MAX_FILESECTOR] != '\0'; ++idxS)
-      {
-      }
       clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
       clear(sectorsFile + idxS * MAX_FILESECTOR, MAX_FILESECTOR);
       files[filesIndex * FILES_ENTRY_LENGTH]  = idxP;
@@ -364,7 +345,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
       }
       // mengisi sector
       i = 0; emptySector = 0;
-      while (i < SECTOR_SIZE && emptySector < *sectors)
+      while (emptySector < *sectors)
       {
         if (map[i] == EMPTY)
         {
