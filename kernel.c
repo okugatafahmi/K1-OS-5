@@ -224,13 +224,26 @@ int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, c
   }
   depan[i] = '\0';
 
-  // cari yang sama
-  idxP = 0;
-  while(idxP<MAX_FILES && !isFound){
-      if (files[idxP*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxP*FILES_ENTRY_LENGTH+2,depan)){
-        isFound = TRUE;
-      }
-      else ++idxP;
+  if (compare2String(depan, "..")){
+    if (parentIndex==0xFF) idxP = 0xFF;
+    else idxP = files[parentIndex*FILES_ENTRY_LENGTH];
+    isFound = TRUE;
+  }
+  else if (compare2String(depan, "."))
+  {
+    idxP = parentIndex;
+    isFound = TRUE;
+  }
+  else
+  {
+    // cari yang sama
+    idxP = 0;
+    while(idxP<MAX_FILES && !isFound){
+        if (files[idxP*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxP*FILES_ENTRY_LENGTH+2,depan)){
+          isFound = TRUE;
+        }
+        else ++idxP;
+    }
   }
   
   // kalau ga ketemu
@@ -249,7 +262,7 @@ int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, c
   }
   else if (isFolder){ // kalau folder
     // ambil bagian belakang  
-    for (j = i+1; j<MAX_FILENAME && path[j]!='\0'; ++j){
+    for (j = i+1; path[j]!='\0'; ++j){
       sisa[j-(i+1)]= path[j];
     }
     sisa[j-(i+1)] = '\0';
@@ -379,7 +392,7 @@ void executeProgram(char *filename, int segment, int *success, char parentIndex)
   readFile(buffer, filename, success, parentIndex);
   if (*success == 1)
   {
-    for (i = 0; i < 20 * 512; i++)
+    for (i = 0; i < SECTOR_SIZE * MAX_FILESECTOR; i++)
     {
       putInMemory(segment, i, buffer[i]);
     }
