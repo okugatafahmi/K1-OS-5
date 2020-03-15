@@ -21,7 +21,7 @@ char findLastChar(char *buffer, int *idx);
 int countSector(char *buffer);
 
 int main(){
-    char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[SECTOR_SIZE*MAX_FILESECTOR];
+    char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[MAX_FILENAME*MAX_FILES];
     char isWrite = TRUE, lastC;
     int idx, idxTotal,success,sector;
 
@@ -33,8 +33,8 @@ int main(){
         idxTotal += idx;
         if (lastC == 24){ // close file
             buffer[idxTotal] = '\0';
-            success = 0;
-            while (success!=1)
+            success = FALSE;
+            while (success!=TRUE)
             {
                 sector = countSector(buffer);
                 interrupt(0x21, 0x0, "\r\n\nNama file yang disimpan: ", 0, 0);
@@ -44,6 +44,7 @@ int main(){
                     interrupt(0x21, 0x0, "File ", 0,0);
                     interrupt(0x21, 0x0, filename, 0,0);
                     interrupt(0x21, 0x0, " berhasil disimpan.\n\r", 0,0);
+                    success = TRUE;
                 }
                 else if (sector == FILE_HAS_EXIST)
                 {
@@ -61,13 +62,13 @@ int main(){
                 {
                     interrupt(0x21, 0x0, "Folder tidak valid", 0, 0);
                 }
-                isWrite = FALSE;
             }
+            isWrite = FALSE;
         }
         else if (lastC == 15) // open file
         {
-            success = 0;
-            while (success!=1)
+            success = FALSE;
+            while (success!=TRUE)
             {
                 interrupt(0x21, 0x0, "\r\n\nNama file yang dibuka: ", 0, 0);
                 interrupt(0x21, 0x1, filename, 0, 0);
