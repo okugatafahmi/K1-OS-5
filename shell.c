@@ -20,6 +20,7 @@
 #define RUN_FILE 1
 #define EXIT_PROGRAM 2
 
+#define LEN_HISTORY 3
 
 void readString(char *string, char *history, int cntIsiHistory);
 int commandType(char *command);
@@ -40,7 +41,7 @@ int main(){
 	char isFound;
 	char pathNow[MAX_FILENAME*MAX_FILES];
 	char files[2*SECTOR_SIZE];
-	char history[3*MAX_FILENAME*MAX_FILES];
+	char history[LEN_HISTORY*MAX_FILENAME*MAX_FILES];
 	char isAfterUndo = FALSE;
 
 	int cntIsiHistory = 0;
@@ -63,10 +64,11 @@ int main(){
 		readString(command, history, cntIsiHistory);
 
 		// masukin ke history
-		if (cntIsiHistory==3){ // udah penuh
-			copyString(history+MAX_FILENAME*MAX_FILES, history,0); // dicopy dulu 2 item terakhir
-			copyString(history+2*MAX_FILENAME*MAX_FILES,history + MAX_FILENAME*MAX_FILES,0);
-			copyString(command,history+2*MAX_FILENAME*MAX_FILES,0);
+		if (cntIsiHistory==LEN_HISTORY){ // udah penuh
+			for (i=0;i<LEN_HISTORY-1; ++i){  // dicopy dulu LEN_HISTORY-1 item terakhir
+				copyString(history+(i+1)*MAX_FILENAME*MAX_FILES,history + i*MAX_FILENAME*MAX_FILES,0);
+			}
+			copyString(command,history+(LEN_HISTORY-1)*MAX_FILENAME*MAX_FILES,0);
 		}
 		else{
 			copyString(command,history+cntIsiHistory*MAX_FILENAME*MAX_FILES,0);
@@ -129,6 +131,7 @@ void readString(char *string, char *history, int cntIsiHistory)
 {
   int i = 0, inputReal, idxHistory=cntIsiHistory;
   char input = 0, temp[MAX_FILENAME*MAX_FILES];
+  char copyToTemp = FALSE;
   while (input != '\r')
   {
     inputReal = interrupt(0x16, 0, 0, 0, 0);
@@ -149,6 +152,10 @@ void readString(char *string, char *history, int cntIsiHistory)
 		if (inputReal == 0x4800 && idxHistory>0) // up arrow key
 		{
 			--idxHistory;
+			if (idxHistory==cntIsiHistory-1) {	// nyimpen command yang dimasukkan
+				clear(temp, MAX_FILENAME*MAX_FILES);
+				copyToTemp = TRUE;
+			}
 		}
 		else if (inputReal == 0x5000 && idxHistory<cntIsiHistory) // down arrow key
 		{
@@ -159,16 +166,16 @@ void readString(char *string, char *history, int cntIsiHistory)
 			continue;
 		}
 
-		if (idxHistory==cntIsiHistory-1) clear(temp, MAX_FILENAME*MAX_FILES);
 
 		while (i--)
 		{
 			interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
 			interrupt(0x10, 0xE00 + '\0', 0, 0, 0);
 			interrupt(0x10, 0xE00 + '\b', 0, 0, 0);
-			if (idxHistory==cntIsiHistory-1) temp[i] = string[i];
+			if (copyToTemp) temp[i] = string[i];
 			string[i] = '\0';
 		}
+		copyToTemp = FALSE;
 		if (idxHistory!=cntIsiHistory) 
 		{
 			copyString(history+idxHistory*MAX_FILENAME*MAX_FILES, string, &i);
@@ -248,7 +255,7 @@ void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
 			}
 			else if (front[0] == '\0' && isRoot){
 				copyString("/",pathNow, 0);
-				*pathNow = 0xFF;
+				*idxPathNowReal = 0xFF;
 				return;
 			}
 			else if (!compare2String(front,"."))
