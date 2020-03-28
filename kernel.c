@@ -17,12 +17,12 @@
 #define TRUE 1
 #define FALSE 0
 
+#include "lib/math.h"
+
 /* Ini deklarasi fungsi */
 void handleInterrupt21(int AX, int BX, int CX, int DX);
 void printString(char *string);
 void readString(char *string);
-int div(int, int);
-int mod(int, int);
 void readSector(char *buffer, int sector);
 void writeSector(char *buffer, int sector);
 void readFile(char *buffer, char *path, int *result, char parentIndex);
@@ -158,26 +158,6 @@ void readString(char *string)
     interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
     interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
   }
-}
-
-int div(int a, int b)
-{
-  int count = 0;
-  while (b <= a)
-  {
-    a -= b;
-    count++;
-  }
-  return count;
-}
-
-int mod(int a, int b)
-{
-  while (b <= a)
-  {
-    a -= b;
-  }
-  return a;
 }
 
 void readSector(char *buffer, int sector)

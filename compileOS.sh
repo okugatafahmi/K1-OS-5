@@ -22,11 +22,14 @@ nasm -f as86 kernel.asm -o kernel_asm.o
 echo 'Compile lib.asm'
 nasm -f as86 lib.asm -o lib_asm.o
 
+echo 'Compile math.c'
+bcc -ansi -c -o lib/math.o lib/math.c || exit 1
+
 echo 'Compile kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
 
 echo 'Link kernel.o and kernel_asm.o'
-ld86 -o kernel -d kernel.o kernel_asm.o
+ld86 -o kernel -d kernel.o lib/math.o kernel_asm.o
 
 echo 'Copy kernel to system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=1
