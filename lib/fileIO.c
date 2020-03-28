@@ -1,4 +1,5 @@
 #include"fileIO.h"
+#include"math.h"
 
 #define SECTOR_SIZE 512
 #define MAP_SECTOR 0x100
