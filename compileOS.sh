@@ -26,6 +26,7 @@ echo 'Compile all file in folder lib'
 bcc -ansi -c -o lib/math.o lib/math.c || exit 1
 bcc -ansi -c -o lib/folder.o lib/folder.c || exit 1
 bcc -ansi -c -o lib/utils.o lib/utils.c || exit 1
+bcc -ansi -c -o lib/file.o lib/file.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
@@ -39,7 +40,7 @@ gcc loadFile.c -o loadFile || exit 1
 
 echo 'Compile, link, and load shell.c'
 bcc -ansi -c -o shell.o shell.c || exit 1
-ld86 -o shell -d shell.o lib_asm.o lib/folder.o lib/utils.o || exit 1
+ld86 -o shell -d shell.o lib_asm.o lib/folder.o lib/file.o lib/utils.o || exit 1
 ./loadFile shell
 
 echo 'Compile, link, and load mikro.c'

@@ -183,13 +183,14 @@ void deleteFile(char *path, int *result, char parentIndex){
     char files[2*SECTOR_SIZE];
     char sectors[SECTOR_SIZE];
     char filename[MAX_FILENAME];
-    char map[SECTOR_SIZE];
+    char map[SECTOR_SIZE], kosong[SECTOR_SIZE];
     int iterSector, iterFile, idxP, idxS;
 
     interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
     interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
     interrupt(0x21, 0x2, sectors, SECTORS_SECTOR, 0);
     interrupt(0x21, 0x2, map, MAP_SECTOR, 0);
+    clear(kosong, SECTOR_SIZE);
 
     // index file nya
     idxP = searchRecurr(files, path, parentIndex, 0, filename);
@@ -201,17 +202,18 @@ void deleteFile(char *path, int *result, char parentIndex){
     // sectornya
     idxS = files[idxP * FILES_ENTRY_LENGTH+1];
     iterSector = 0;
-    while (iterSector < MAX_FILESECTOR)
+    while (iterSector < MAX_FILESECTOR && sectors[idxS * MAX_FILESECTOR + iterSector] != '\0')
     {
-        map[sectors[idxS * MAX_FILESECTOR + iterSector]] = '\0';
-        sectors[idxS * MAX_FILESECTOR + iterSector] = '\0';
-        ++iterSector;
+      interrupt(0x21, 0x3, kosong, sectors[idxS * MAX_FILESECTOR + iterSector], 0);
+      map[sectors[idxS * MAX_FILESECTOR + iterSector]] = '\0';
+      sectors[idxS * MAX_FILESECTOR + iterSector] = '\0';
+      ++iterSector;
     }
 
     iterFile = 0;
     while (iterFile < FILES_ENTRY_LENGTH){
-        files[idxP*FILES_ENTRY_LENGTH + iterFile] = '\0';  
-
+      files[idxP*FILES_ENTRY_LENGTH + iterFile] = '\0';  
+      ++iterFile;
     }
 
     interrupt(0x21, 0x3, map, MAP_SECTOR, 0);

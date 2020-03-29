@@ -17,7 +17,7 @@ void deleteFolder(char *path, int *result, char parentIndex);
 /**
  * content berisi filenames yang berada pada suatu parentIndex, count bernilai banyak file yang ada
  */
-void listContent(char *content, int *count, char parentIndex, char *files);
+void listContent(char *content, int *count, char parentIndex);
 
 /**
  * Menemukan idx dari suatu filename pada suatu parentIndex. Return -1 jika tidak ketemu

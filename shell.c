@@ -1,21 +1,4 @@
-#define SECTOR_SIZE 512
-#define MAP_SECTOR 0x100
-#define FILES_SECTOR 0X101
-#define SECTORS_SECTOR 0x103
-#define MAX_FILES 64
-#define MAX_SECTORS_FILESECTOR 32
-#define FILES_ENTRY_LENGTH 16
-#define MAX_FILENAME 14
-#define MAX_FILESECTOR 16
-#define EMPTY 0x00
-#define USED 0xFF
-#define FILE_NOT_FOUND -1
-#define FILE_HAS_EXIST -1
-#define INSUFFICIENT_FILES -2
-#define INSUFFICIENT_SECTORS -3
-#define INVALID_FOLDER -4
-#define TRUE 1
-#define FALSE 0
+#include "lib/defines.h"
 #define CD 0
 #define RUN_FILE 1
 #define LS 2
@@ -26,24 +9,23 @@
 
 #include "lib/utils.h"
 #include "lib/folder.h"
+#include "lib/file.h"
 
 void readString(char *string, char *history, int cntIsiHistory);
 int commandType(char *command);
 void setPath(char *path, int idxPathNow, int *iter, char *files);
-void executeCD(char *path, char *idxPathNowReal, char *pathNow, char *files);
+void executeCD(char *path, char *idxPathNowReal, char *pathNow);
 
 int main(){
 	char isRun = TRUE;
-	char success;
 	char command[MAX_FILENAME*MAX_FILES];
-	int type, i;
+	int type, i, success;
 	char idxNow = 0xFF;   // idx folder sekarang
 	char isFound;
 	char pathNow[MAX_FILENAME*MAX_FILES];
-	char files[2*SECTOR_SIZE];
 	char history[LEN_HISTORY*MAX_FILENAME*MAX_FILES];
 	char isAfterUndo = FALSE;
-	char content[MAX_FILES*MAX_FILESECTOR];
+	char content[MAX_FILES*FILES_ENTRY_LENGTH];
 
 	int cntIsiHistory = 0;
 	int cntContent;
@@ -55,9 +37,6 @@ int main(){
 	// path awal = root (/)
 	pathNow[0] = '/';
 	pathNow[1] = '\0';
-	
-	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
-  	interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
 
 	while(isRun){
 		interrupt(0x21, 0x0, "Tim Bentar:", 0, 0);
@@ -81,7 +60,7 @@ int main(){
 		switch (type)
 		{
 		case CD:
-			executeCD(command+3, &idxNow, pathNow, files);
+			executeCD(command+3, &idxNow, pathNow);
 			break;
 		case RUN_FILE:
 			interrupt(0x21, (idxNow<<8) | 0x6, command+2, 0x2000, &success);
@@ -91,7 +70,7 @@ int main(){
 		    }
 			break;
 		case LS:
-			listContent(content,&cntContent,idxNow,files);
+			listContent(content,&cntContent,idxNow);
 			while (cntContent--){
 				interrupt(0x21, 0x0, content+cntContent*MAX_FILESECTOR+2,0,0);
 				if (content[cntContent*MAX_FILESECTOR+1]==0xFF){
@@ -104,11 +83,10 @@ int main(){
 			isRun = FALSE;
 			break;
 		default:
-			i = findIdxFilename(command, 1, files);
-			if (i == -1)
+			interrupt(0x21, (0x1 << 8) | 0x6, command, 0x2000, &success);
+			if (success == -1){
 				interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
-			else
-				interrupt(0x21, (0x1 << 8) | 0x6, command, 0x2000, &success);
+			}
 			break;
 		}
 	}
@@ -211,25 +189,28 @@ void setPath(char *path, int idxPathNow, int *iter, char *files){
 	}
 }
 
-void executeCD(char *path, char *idxPathNowReal, char *pathNow, char *files){
+void executeCD(char *path, char *idxPathNowReal, char *pathNow){
 	int result;
-	char idxPathNow = *idxPathNowReal;
+	char idxPathNow = *idxPathNowReal, files[MAX_FILES*FILES_ENTRY_LENGTH];
+
+	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+  	interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+
 	goToFolder(path, &result, &idxPathNow, files);
 
 	if (result==-1){
 		interrupt(0x21, 0x0, path, 0, 0);
 		interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
-		return;
 	}
 	else if (result==-2){
 		interrupt(0x21, 0x0, path, 0, 0);
 		interrupt(0x21, 0x0, ": Not a directory\n\r", 0, 0);
-		return;
 	}
-
-	if (*idxPathNowReal != idxPathNow){
-		*idxPathNowReal = idxPathNow;
-		clear(pathNow, MAX_FILENAME*MAX_FILES);
-		setPath(pathNow, idxPathNow, 0, files);
+	else{
+		if (*idxPathNowReal != idxPathNow){
+			*idxPathNowReal = idxPathNow;
+			clear(pathNow, MAX_FILENAME*MAX_FILES);
+			setPath(pathNow, idxPathNow, 0, files);
+		}
 	}
 }
