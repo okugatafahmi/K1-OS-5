@@ -1,54 +1,6 @@
-#include"fileIO.h"
-#include"math.h"
-
-#define SECTOR_SIZE 512
-#define MAP_SECTOR 0x100
-#define FILES_SECTOR 0X101
-#define SECTORS_SECTOR 0x103
-#define MAX_FILES 64
-#define MAX_SECTORS_FILESECTOR 32
-#define FILES_ENTRY_LENGTH 16
-#define MAX_FILENAME 14
-#define MAX_FILESECTOR 16
-#define EMPTY 0x00
-#define USED 0xFF
-#define FILE_NOT_FOUND -1
-#define FILE_HAS_EXIST -1
-#define INSUFFICIENT_FILES -2
-#define INSUFFICIENT_SECTORS -3
-#define INVALID_FOLDER -4
-#define TRUE 1
-#define FALSE 0
-
-
-void readSector(char *buffer, int sector)
-{
-  interrupt(0x13, 0x201, buffer, div(sector, 36) * 0x100 + mod(sector, 18) + 1,
-            mod(div(sector, 18), 2) * 0x100);
-}
-
-void writeSector(char *buffer, int sector)
-{
-  interrupt(0x13, 0x301, buffer, div(sector, 36) * 0x100 + mod(sector, 18) + 1,
-            mod(div(sector, 18), 2) * 0x100);
-}
-
-char compare2String(char* s1, char* s2){
-  int i;
-  for (i = 0; i<MAX_FILENAME; ++i){
-    if (s1[i]=='\0' && s2[i]=='\0') return TRUE;
-    if (s1[i]!=s2[i]) return FALSE;
-  }
-}
-
-void clear(char *buffer, int length)
-{
-  int i;
-  for (i = 0; i < length; i++)
-  {
-    buffer[i] = 0x00;
-  }
-}
+#include "file.h"
+#include "defines.h"
+#include "utils.h"
 
 int searchRecurr(char *files, char *path, char parentIndex, char searchFolder, char *filename){
   char depan[MAX_FILENAME];
@@ -131,9 +83,9 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
   char filename[MAX_FILENAME];
   int iterSector, idxP, idxS;
 
-  readSector(files, FILES_SECTOR);
-  readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
-  readSector(sectors, SECTORS_SECTOR);
+  interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+  interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+  interrupt(0x21, 0x2, sectors, SECTORS_SECTOR, 0);
   
   idxP = searchRecurr(files, path, parentIndex, 0, filename);
   if (idxP == FILE_NOT_FOUND){
@@ -145,7 +97,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
   iterSector = 0;
   while (iterSector < MAX_FILESECTOR && sectors[idxS * MAX_FILESECTOR + iterSector] != 0)
   {
-    readSector(buffer + iterSector * SECTOR_SIZE, sectors[idxS * MAX_FILESECTOR + iterSector]);
+    interrupt(0x21, 0x2, buffer + iterSector * SECTOR_SIZE, sectors[idxS * MAX_FILESECTOR + iterSector], 0);
     ++iterSector;
   }
   *result = 1;
@@ -157,10 +109,10 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
   char files[2*SECTOR_SIZE], map[SECTOR_SIZE], sectorBuffer[SECTOR_SIZE], sectorsFile[SECTOR_SIZE], filename[MAX_FILENAME];
   int filesIndex, idxP, idxS;
 
-  readSector(map, MAP_SECTOR);
-  readSector(files, FILES_SECTOR);
-  readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
-  readSector(sectorsFile, SECTORS_SECTOR);
+  interrupt(0x21, 0x2, map, MAP_SECTOR, 0);
+  interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+  interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+  interrupt(0x21, 0x2, sectorsFile, SECTORS_SECTOR, 0);
   idxP = searchRecurr(files, path, parentIndex, 1, filename);
 
   if (idxP == FILE_NOT_FOUND){
@@ -209,16 +161,16 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
           {
             sectorBuffer[j] = buffer[emptySector * SECTOR_SIZE + j];
           }
-          writeSector(sectorBuffer, i);
+          interrupt(0x21, 0x3, sectorBuffer, i, 0);
           sectorsFile[idxS * MAX_FILESECTOR + emptySector++] = i;
           map[i] = USED;
         }
         ++i; 
       }
-      writeSector(map, MAP_SECTOR);
-      writeSector(files, FILES_SECTOR);
-      writeSector(files + SECTOR_SIZE, FILES_SECTOR+1);
-      writeSector(sectorsFile, SECTORS_SECTOR);
+      interrupt(0x21, 0x3, map, MAP_SECTOR, 0);
+      interrupt(0x21, 0x3, files, FILES_SECTOR, 0);
+      interrupt(0x21, 0x3, files + SECTOR_SIZE, FILES_SECTOR+1, 0);
+      interrupt(0x21, 0x3, sectorsFile, SECTORS_SECTOR, 0);
     }
   }
   else
@@ -234,10 +186,10 @@ void deleteFile(char *path, int *result, char parentIndex){
     char map[SECTOR_SIZE];
     int iterSector, iterFile, idxP, idxS;
 
-    readSector(files, FILES_SECTOR);
-    readSector(files+SECTOR_SIZE, FILES_SECTOR+1);
-    readSector(sectors, SECTORS_SECTOR);
-    readSector(map, MAP_SECTOR);
+    interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+    interrupt(0x21, 0x2, sectors, SECTORS_SECTOR, 0);
+    interrupt(0x21, 0x2, map, MAP_SECTOR, 0);
 
     // index file nya
     idxP = searchRecurr(files, path, parentIndex, 0, filename);
@@ -262,8 +214,8 @@ void deleteFile(char *path, int *result, char parentIndex){
 
     }
 
-    writeSector(map, MAP_SECTOR);
-    writeSector(files, FILES_SECTOR);
-    writeSector(files + SECTOR_SIZE, FILES_SECTOR+1);
-    writeSector(sectors, SECTORS_SECTOR);
+    interrupt(0x21, 0x3, map, MAP_SECTOR, 0);
+    interrupt(0x21, 0x3, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x3, files + SECTOR_SIZE, FILES_SECTOR+1, 0);
+    interrupt(0x21, 0x3, sectors, SECTORS_SECTOR, 0);
 }
