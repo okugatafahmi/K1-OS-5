@@ -21,7 +21,7 @@ int main(){
     int i;
 
     // baca argumen, copy argumen ke fileName
-    readSector(sectors, SECTORS_SECTOR);
+    readSector(sectors, 600);
     i = 600;
     while(sectors[i]!='\0'){
         fileName[i-600] = sectors[i];
