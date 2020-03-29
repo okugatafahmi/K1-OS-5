@@ -22,23 +22,30 @@ nasm -f as86 kernel.asm -o kernel_asm.o
 echo 'Compile lib.asm'
 nasm -f as86 lib.asm -o lib_asm.o
 
-echo 'Compile math.c'
+echo 'Compile all file in folder lib'
 bcc -ansi -c -o lib/math.o lib/math.c || exit 1
+bcc -ansi -c -o lib/folder.o lib/folder.c || exit 1
+bcc -ansi -c -o lib/utils.o lib/utils.c || exit 1
 
-echo 'Compile kernel.c'
+echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
-
-echo 'Link kernel.o and kernel_asm.o'
-ld86 -o kernel -d kernel.o lib/math.o kernel_asm.o
+ld86 -o kernel -d kernel.o lib/math.o kernel_asm.o || exit 1
 
 echo 'Copy kernel to system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=1
 
-echo "Compile loadFile.c"
+echo 'Compile loadFile.c'
 gcc loadFile.c -o loadFile || exit 1
 
-echo 'Run cnl.sh'
-./cnl.sh shell.c mikro.c || exit 1
+echo 'Compile, link, and load shell.c'
+bcc -ansi -c -o shell.o shell.c || exit 1
+ld86 -o shell -d shell.o lib_asm.o lib/folder.o lib/utils.o || exit 1
+./loadFile shell
+
+echo 'Compile, link, and load mikro.c'
+bcc -ansi -c -o mikro.o mikro.c || exit 1
+ld86 -o mikro -d mikro.o lib_asm.o || exit 1
+./loadFile mikro
 
 echo 'Load key.txt to system.img'
 ./loadFile key.txt

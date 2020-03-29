@@ -18,33 +18,35 @@
 #define FALSE 0
 #define CD 0
 #define RUN_FILE 1
-#define EXIT_PROGRAM 2
+#define LS 2
+#define EXIT_PROGRAM 3
 
 #define LEN_HISTORY 3
+#define ARGS_SECTOR 600
+
+#include "lib/utils.h"
+#include "lib/folder.h"
 
 void readString(char *string, char *history, int cntIsiHistory);
 int commandType(char *command);
-char compare2String(char* s1, char* s2);
-void copyString(char* s1, char* s2, int *len);
-void clear(char *buffer, int length);
-int findIdxFilename(char *filename, int parentIndex, char *files);
 void setPath(char *path, int idxPathNow, int *iter, char *files);
-void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files);
+void executeCD(char *path, char *idxPathNowReal, char *pathNow, char *files);
 
 int main(){
 	char isRun = TRUE;
 	char success;
 	char command[MAX_FILENAME*MAX_FILES];
 	int type, i;
-	int idxNext, parentIndex;
-	int idxNow = 0xFF;
+	char idxNow = 0xFF;   // idx folder sekarang
 	char isFound;
 	char pathNow[MAX_FILENAME*MAX_FILES];
 	char files[2*SECTOR_SIZE];
 	char history[LEN_HISTORY*MAX_FILENAME*MAX_FILES];
 	char isAfterUndo = FALSE;
+	char content[MAX_FILES*MAX_FILESECTOR];
 
 	int cntIsiHistory = 0;
+	int cntContent;
 	
 	for (i = 0; i<3*MAX_FILENAME; ++i){
 		history[i] = '\0';
@@ -88,6 +90,16 @@ int main(){
 		    	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
 		    }
 			break;
+		case LS:
+			listContent(content,&cntContent,idxNow,files);
+			while (cntContent--){
+				interrupt(0x21, 0x0, content+cntContent*MAX_FILESECTOR+2,0,0);
+				if (content[cntContent*MAX_FILESECTOR+1]==0xFF){
+					interrupt(0x21, 0x0, "/", 0, 0);
+				}
+				interrupt(0x21, 0x0, "\n\r", 0, 0);
+			}
+			break;
 		case EXIT_PROGRAM:
 			isRun = FALSE;
 			break;
@@ -102,27 +114,10 @@ int main(){
 	}
 }
 
-void copyString(char* s1, char* s2, int *len){// copy s1 ke s2
-	int i;
-	for (i = 0; s1[i]!='\0'; ++i){
-		s2[i] = s1[i];
-	}
-	s2[i] = '\0';
-	*len = i;
-}
-
-char compare2String(char* s1, char* s2){
-  int i;
-  for (i = 0; i<MAX_FILENAME; ++i){
-    if (s1[i]=='\0' && s2[i]=='\0') return TRUE;
-    if (s1[i]!=s2[i]) return FALSE;
-  }
-}
-
-
 int commandType(char *command){
 	if (command[0]=='c' && command[1]=='d' && command[2]==' ') return CD;
 	else if (command[0]=='.' && command[1]=='/') return RUN_FILE;
+	else if (compare2String("ls",command)) return LS;
 	else if (compare2String("exit",command)) return EXIT_PROGRAM;
 	else return -1;
 }
@@ -199,30 +194,6 @@ void readString(char *string, char *history, int cntIsiHistory)
   interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
 }
 
-void clear(char *buffer, int length)
-{
-  int i;
-  for (i = 0; i < length; i++)
-  {
-    buffer[i] = 0x00;
-  }
-}
-
-int findIdxFilename(char *filename, int parentIndex, char *files){
-	char isFound; 
-	int idxFiles=0;
-
-	isFound = FALSE;
-	while(idxFiles<MAX_FILES && !isFound){
-		if (files[idxFiles*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxFiles*FILES_ENTRY_LENGTH+2,filename)){
-			isFound = TRUE;
-		}
-		else ++idxFiles;
-	}
-	if (isFound) return idxFiles;
-	else return -1;
-}
-
 void setPath(char *path, int idxPathNow, int *iter, char *files){
 	if (idxPathNow == 0xFF){
 		path[0] = '/';
@@ -240,70 +211,22 @@ void setPath(char *path, int idxPathNow, int *iter, char *files){
 	}
 }
 
-void executeCD(char *path, int *idxPathNowReal, char *pathNow, char *files){
-	int iterPath=0,i=0, parentIndex, idxPathNow = *idxPathNowReal, idxPathNext;
-	char front[MAX_FILENAME], isRoot = TRUE;
+void executeCD(char *path, char *idxPathNowReal, char *pathNow, char *files){
+	int result;
+	char idxPathNow = *idxPathNowReal;
+	goToFolder(path, &result, &idxPathNow, files);
 
-	clear(front,MAX_FILENAME);
-	// copy namafolder
-	while(path[iterPath]!='\0'){
-		if (path[iterPath]=='/'){
-			front[i] = '\0';
-			if (compare2String(front,"..")){
-				// ke index parent
-				if (idxPathNow != 0xFF) idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
-			}
-			else if (front[0] == '\0' && isRoot){
-				copyString("/",pathNow, 0);
-				*idxPathNowReal = 0xFF;
-				return;
-			}
-			else if (!compare2String(front,"."))
-			{
-				// go to folder yang di cd in
-				idxPathNext = findIdxFilename(front, idxPathNow, files);
+	if (result==-1){
+		interrupt(0x21, 0x0, path, 0, 0);
+		interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
+		return;
+	}
+	else if (result==-2){
+		interrupt(0x21, 0x0, path, 0, 0);
+		interrupt(0x21, 0x0, ": Not a directory\n\r", 0, 0);
+		return;
+	}
 
-				if (idxPathNext != -1){
-					// ganti jadi index baru
-					idxPathNow = idxPathNext;
-				}
-				else{
-					interrupt(0x21, 0x0, front, 0, 0);
-					interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
-					return;
-				}
-			}
-			isRoot = FALSE;
-			// bersihkan lagi front
-			clear(front, MAX_FILENAME);
-			i = 0;
-		}
-		else {
-			front[i] = path[iterPath];
-			++i;
-		}
-		++iterPath;
-	}
-	front[i] = '\0';
-	if (compare2String(front,"..")){
-		// ke index parent
-		if (idxPathNow != 0xFF) idxPathNow = files[idxPathNow*FILES_ENTRY_LENGTH];
-	}
-	else if (!compare2String(front,".") && front[0]!='\0')
-	{
-		// go to folder yang di cd in
-		idxPathNext = findIdxFilename(front, idxPathNow, files);
-
-		if (idxPathNext != -1){
-			// ganti jadi index baru
-			idxPathNow = idxPathNext;
-		}
-		else{
-			interrupt(0x21, 0x0, front, 0, 0);
-			interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
-			return;
-		}
-	}
 	if (*idxPathNowReal != idxPathNow){
 		*idxPathNowReal = idxPathNow;
 		clear(pathNow, MAX_FILENAME*MAX_FILES);
