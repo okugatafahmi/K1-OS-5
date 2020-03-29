@@ -1,6 +1,6 @@
-#include"fileIO.h"
-#include"teks.h"
-#include"math.h"
+#include"../lib/file.h"
+#include"../lib/teks.h"
+#include"../lib/math.h"
 
 #define SECTOR_SIZE 512
 #define SECTORS_SECTOR 0x103

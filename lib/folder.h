@@ -19,20 +19,4 @@ void deleteFolder(char *path, int *result, char parentIndex);
  */
 void listContent(char *content, int *count, char parentIndex);
 
-/**
- * Menemukan idx dari suatu filename pada suatu parentIndex. Return -1 jika tidak ketemu
- */
-int findIdxFilename(char *filename, char parentIndex, char *files);
-
-/**
- * Menuju ke folder dengan pathnya path dan sekarang sedang di parentIndex.
- * result akan bernilai:
- * 1, jika folder berhasil pindah
- * -1, jika ada nama folder di path yang tidak ditemukan
- * -2, jika ternyata di pathnya ada yang berupa file (bukan directory/folder)
- * parentIndex akan bernilain posisi hasilnya. Jika gagal pindah, path akan terisi nama file penyebab
- * error.
- */
-void goToFolder(char *path, int *result, char *parentIndex, char *files);
-
 #endif

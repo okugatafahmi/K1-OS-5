@@ -25,7 +25,7 @@ int main(){
 	char pathNow[MAX_FILENAME*MAX_FILES];
 	char history[LEN_HISTORY*MAX_FILENAME*MAX_FILES];
 	char isAfterUndo = FALSE;
-	char content[MAX_FILES*FILES_ENTRY_LENGTH];
+	char content[2*SECTOR_SIZE];
 
 	int cntIsiHistory = 0;
 	int cntContent;
@@ -191,12 +191,12 @@ void setPath(char *path, int idxPathNow, int *iter, char *files){
 
 void executeCD(char *path, char *idxPathNowReal, char *pathNow){
 	int result;
-	char idxPathNow = *idxPathNowReal, files[MAX_FILES*FILES_ENTRY_LENGTH];
+	char idxPathNow = *idxPathNowReal, files[2*SECTOR_SIZE];
 
 	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
   	interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
 
-	goToFolder(path, &result, &idxPathNow, files);
+	goToFolder(path, &result, &idxPathNow);
 
 	if (result==-1){
 		interrupt(0x21, 0x0, path, 0, 0);
