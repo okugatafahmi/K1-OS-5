@@ -188,10 +188,10 @@ void getArgs(char *idxNow,char *argc, char *argv){
 
 	interrupt(0x21, 0x2, args, ARGS_SECTOR, 0);
 	interrupt(0x21, 0x2, args+SECTOR_SIZE, ARGS_SECTOR+1, 0);
-	args[0] =  idxNow;
-	args[1] = argc;
+	*idxNow = args[0];
+	*argc = args[1];
 
-	while (i<(int)argc)
+	while (i<(int)*argc)
 	{
 		for (col=0; col<ARGS_LENGTH && args[2+i*ARGS_LENGTH+col] != '\0'; ++col){
 			argv[i*ARGS_LENGTH+col] = args[2+i*ARGS_LENGTH+col];

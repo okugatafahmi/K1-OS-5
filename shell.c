@@ -85,7 +85,7 @@ int main(){
 			isRun = FALSE;
 			break;
 		default:
-			interrupt(0x21, (0x1 << 8) | 0x6, input, 0x2000, &success);
+			interrupt(0x21, (0x1 << 8) | 0x6, command, 0x2000, &success);
 			if (success == -1){
 				interrupt(0x21, 0x0, "Invalid command\n\r", 0x0, 0x0);
 			}

@@ -22,11 +22,12 @@ nasm -f as86 kernel.asm -o kernel_asm.o
 echo 'Compile lib.asm'
 nasm -f as86 lib.asm -o lib_asm.o
 
-echo 'Compile all file in folder lib'
+echo 'Compile all file in lib folder'
 bcc -ansi -c -o lib/math.o lib/math.c || exit 1
 bcc -ansi -c -o lib/folder.o lib/folder.c || exit 1
 bcc -ansi -c -o lib/utils.o lib/utils.c || exit 1
 bcc -ansi -c -o lib/file.o lib/file.c || exit 1
+bcc -ansi -c -o lib/teks.o lib/teks.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
@@ -47,6 +48,11 @@ echo 'Compile, link, and load mikro.c'
 bcc -ansi -c -o mikro.o mikro.c || exit 1
 ld86 -o mikro -d mikro.o lib_asm.o || exit 1
 ./loadFile mikro
+
+echo 'Compile & load all utility file'
+bcc -ansi -c -o cat.o cat.c || exit 1
+ld86 -o cat -d cat.o lib/utils.o lib/file.o lib/teks.o lib_asm.o || exit 1
+./loadFile cat
 
 echo 'Load key.txt to system.img'
 ./loadFile key.txt
