@@ -33,10 +33,45 @@ char compare2String(char *s1, char *s2)
 	}
 }
 
-int findIdxFilename(char *filename, char parentIndex, char *files){
-	char isFound; 
+void split(char *input, char separator, char *argv, char *argc, int rowLen){
+	int idx = 0, row = 0, col = 0;
+	char petik = '\0';
+
+	while (input[idx] != '\0')
+	{
+		if (input[idx] == '\\'){
+			argv[row*rowLen+col] = input[idx+1];
+			if (input[idx+1] != '\0') ++idx;  // antisipasi error garing di plg blkg
+		}
+		else if (input[idx] == '"' || input[idx] == '\''){
+			if (petik == input[idx]) petik = '\0';	// akhir petik
+			else if (petik != '\0') argv[row*rowLen+col] = input[idx];
+			else petik = input[idx];
+		}
+		else if (petik != '\0'){
+			argv[row*rowLen+col] = input[idx];
+		}
+		else if (input[idx] == separator){
+			argv[row*rowLen+col] = '\0';
+			++row;
+			col = -1;
+		}
+		else{
+			argv[row*rowLen+col] = input[idx];
+		}
+		++col;
+		++idx;
+	}
+	argv[row*rowLen+col] = '\0';
+	*argc = (char)(row+1);
+}
+
+int findIdxFilename(char *filename, char parentIndex){
+	char isFound, files[SECTOR_FILES_SIZE];
 	int idxFiles=0;
 
+	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
 	isFound = FALSE;
 	while(idxFiles<MAX_FILES && !isFound){
 		if (files[idxFiles*FILES_ENTRY_LENGTH]==parentIndex && compare2String(files+idxFiles*FILES_ENTRY_LENGTH+2,filename)){
@@ -50,7 +85,7 @@ int findIdxFilename(char *filename, char parentIndex, char *files){
 
 void goToFolder(char *path, int *result, char *parentIndex){
 	int iterPath=0,i=0, idxPathNext;
-	char front[MAX_FILENAME], isRoot = TRUE, files[2*SECTOR_SIZE];
+	char front[MAX_FILENAME], isRoot = TRUE, files[SECTOR_FILES_SIZE];
 
 	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
     interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
@@ -71,7 +106,7 @@ void goToFolder(char *path, int *result, char *parentIndex){
 			else if (!compare2String(front,"."))
 			{
 				// go to folder yang di cd in
-				idxPathNext = findIdxFilename(front, *parentIndex, files);
+				idxPathNext = findIdxFilename(front, *parentIndex);
 
 				if (idxPathNext != -1){
 					if (files[idxPathNext*FILES_ENTRY_LENGTH+1]==0xFF){ // kalau dia folder, masuk
@@ -109,7 +144,7 @@ void goToFolder(char *path, int *result, char *parentIndex){
 	else if (!compare2String(front,".") && front[0]!='\0')
 	{
 		// go to folder yang di cd in
-		idxPathNext = findIdxFilename(front, *parentIndex, files);
+		idxPathNext = findIdxFilename(front, *parentIndex);
 
 		if (idxPathNext != -1){
 			if (files[idxPathNext*FILES_ENTRY_LENGTH+1]==0xFF){ // kalau dia folder, masuk
@@ -125,5 +160,42 @@ void goToFolder(char *path, int *result, char *parentIndex){
 			copyString(front,path,0);
 			*result = -1;
 		}
+	}
+}
+
+void putArgs(char idxNow,char argc, char *argv){
+	char args[SECTOR_FILES_SIZE];
+	int i=0, col;
+
+	clear(args,SECTOR_FILES_SIZE);
+	args[0] =  idxNow;
+	args[1] = argc;
+
+	while (i<(int)argc)
+	{
+		for (col=0; col<ARGS_LENGTH && argv[i*ARGS_LENGTH+col] != '\0'; ++col){
+			args[2+i*ARGS_LENGTH+col] = argv[i*ARGS_LENGTH+col];
+		}
+		++i;
+	}
+	interrupt(0x21, 0x3, args, ARGS_SECTOR, 0);
+	interrupt(0x21, 0x3, args+SECTOR_SIZE, ARGS_SECTOR+1, 0);
+}
+
+void getArgs(char *idxNow,char *argc, char *argv){
+	char args[SECTOR_FILES_SIZE];
+	int i=0, col;
+
+	interrupt(0x21, 0x2, args, ARGS_SECTOR, 0);
+	interrupt(0x21, 0x2, args+SECTOR_SIZE, ARGS_SECTOR+1, 0);
+	args[0] =  idxNow;
+	args[1] = argc;
+
+	while (i<(int)argc)
+	{
+		for (col=0; col<ARGS_LENGTH && args[2+i*ARGS_LENGTH+col] != '\0'; ++col){
+			argv[i*ARGS_LENGTH+col] = args[2+i*ARGS_LENGTH+col];
+		}
+		++i;
 	}
 }

@@ -18,6 +18,12 @@ void copyString(char *s1, char *s2, int *len);
 char compare2String(char *s1, char *s2);
 
 /**
+ * Mensplit string input ke dalam argv. 1 baris argv berisi SECTOR_SIZE karakter
+ * rowLen merupakan panjang 1 baris argv
+ */
+void split(char *input, char separator, char *argv, char *argc, int rowLen);
+
+/**
  * Menemukan idx dari suatu filename pada suatu parentIndex. Return -1 jika tidak ketemu
  */
 int findIdxFilename(char *filename, char parentIndex);
@@ -33,4 +39,13 @@ int findIdxFilename(char *filename, char parentIndex);
  */
 void goToFolder(char *path, int *result, char *parentIndex);
 
+/**
+ * Menaruh argumen berikut ke ARGS_SECTOR
+ */
+void putArgs(char idxNow,char argc, char *argv);
+
+/**
+ * Mendapatkan argumen berikut dari ARGS_SECTOR
+ */
+void getArgs(char *idxNow,char *argc, char *argv);
 #endif
