@@ -19,6 +19,7 @@ int main(){
             printString(buffer);
         }
         else{
+            printString("cat: ");
             printString(argv+i*ARGS_LENGTH);
             printString(": No such file or directory");
         }

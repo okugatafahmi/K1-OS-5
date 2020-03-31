@@ -24,9 +24,20 @@ char compare2String(char *s1, char *s2);
 void split(char *input, char separator, char *argv, char *argc, int rowLen);
 
 /**
- * Menemukan idx dari suatu filename pada suatu parentIndex. Return -1 jika tidak ketemu
+ * Mensplit suatu path menjadi pathTo (path menuju file/folder) dan filename
+ * (file/ folder yang merupakan nama terujung setelah '/' terakhir)
+ */
+void splitPath(char *path, char *pathTo, char *filename);
+
+/**
+ * Menemukan idx dari suatu filename pada suatu parentIndex. Return -1 (FILE_NOT_FOUND) jika tidak ketemu
  */
 int findIdxFilename(char *filename, char parentIndex);
+
+/**
+ * Mengembalikan index sector file dari file ke-fileIdx
+ */
+char getIdxFileSector(int fileIdx);
 
 /**
  * Menuju ke folder dengan pathnya path dan sekarang sedang di parentIndex.

@@ -66,6 +66,25 @@ void split(char *input, char separator, char *argv, char *argc, int rowLen){
 	*argc = (char)(row+1);
 }
 
+void splitPath(char *path, char *pathTo, char *filename){
+	int idxMid=-1, idx=0;
+
+	while (path[idx] != '\0'){
+		if (path[idx] == '/'){
+			idxMid = idx;
+		}
+		++idx;
+	}
+	for (idx=0; idx<idxMid; ++idx){
+		pathTo[idx] = path[idx];
+	}
+	pathTo[idx] = '\0';
+	for (idx=idxMid+1; path[idx] != '\0'; ++idx){
+		filename[idx-(idxMid+1)] = path[idx];
+	}
+	filename[idx-(idxMid+1)] = '\0';
+}
+
 int findIdxFilename(char *filename, char parentIndex){
 	char isFound, files[SECTOR_FILES_SIZE];
 	int idxFiles=0;
@@ -80,7 +99,15 @@ int findIdxFilename(char *filename, char parentIndex){
 		else ++idxFiles;
 	}
 	if (isFound) return idxFiles;
-	else return -1;
+	else return FILE_NOT_FOUND;
+}
+
+char getIdxFileSector(int fileIdx){
+	char files[SECTOR_FILES_SIZE];
+
+	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+	return files[fileIdx*FILES_ENTRY_LENGTH+1];
 }
 
 void goToFolder(char *path, int *result, char *parentIndex){
@@ -196,6 +223,7 @@ void getArgs(char *idxNow,char *argc, char *argv){
 		for (col=0; col<ARGS_LENGTH && args[2+i*ARGS_LENGTH+col] != '\0'; ++col){
 			argv[i*ARGS_LENGTH+col] = args[2+i*ARGS_LENGTH+col];
 		}
+		argv[i*ARGS_LENGTH+col] = '\0';
 		++i;
 	}
 }

@@ -51,8 +51,11 @@ ld86 -o mikro -d mikro.o lib_asm.o || exit 1
 
 echo 'Compile & load all utility file'
 bcc -ansi -c -o cat.o cat.c || exit 1
-ld86 -o cat -d cat.o lib/utils.o lib/file.o lib/teks.o lib_asm.o || exit 1
+ld86 -o cat -d cat.o lib/utils.o lib/file.o lib/teks.o lib/math.o lib_asm.o || exit 1
 ./loadFile cat
+bcc -ansi -c -o rm.o rm.c || exit 1
+ld86 -o rm -d rm.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
+./loadFile rm
 
 echo 'Load key.txt to system.img'
 ./loadFile key.txt
