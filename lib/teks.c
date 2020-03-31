@@ -1,5 +1,23 @@
 #include"teks.h"
 
+void printInt(int num){
+  char strNum[10005];
+  int i = 0, j;
+
+  if (num==0){
+    interrupt(0x10, (0xE * 256) + '0', 0, 0); 
+  }
+  else{
+    while(num>0){
+      strNum[i++] = (num%10)+'0';
+      num = num/10;
+    }
+    for (j = i; j>=0; j--){
+      interrupt(0x10, (0xE * 256) + strNum[j], 0, 0);
+    }
+  }
+}
+
 void printString(char *string)
 {
   int i = 0;
