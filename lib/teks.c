@@ -12,7 +12,7 @@ void printInt(int num){
       strNum[i++] = (num%10)+'0';
       num = num/10;
     }
-    for (j = i; j>=0; j--){
+    for (j = i-1; j>=0; j--){
       interrupt(0x10, (0xE * 256) + strNum[j], 0, 0);
     }
   }
