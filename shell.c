@@ -7,8 +7,6 @@
 #define LEN_HISTORY 3
 
 #include "lib/utils.h"
-#include "lib/folder.h"
-#include "lib/file.h"
 
 void readString(char *string, char *history, int cntIsiHistory);
 int commandType(char *command);
@@ -62,10 +60,15 @@ int main(){
 		switch (type)
 		{
 		case CD:
-			executeCD(input+3, &idxNow, pathNow);
+			if (argc>1){
+				interrupt(0x21, 0x0, "cd: too many arguments\n\r", 0, 0);
+			}
+			else{
+				executeCD(argv, &idxNow, pathNow);
+			}
 			break;
 		case RUN_FILE:
-			interrupt(0x21, (idxNow<<8) | 0x6, input+2, 0x2000, &success);
+			interrupt(0x21, (idxNow<<8) | 0x6, argv, 0x2000, &success);
 			if (success != 1)
 		    {
 		    	interrupt(0x21, 0x0, "Failed to execute file\n\r", 0, 0);
@@ -179,7 +182,7 @@ void splitInput(char *input, char *command, char *argc, char *argv){
 
 	if (input[0]=='.' && input[1]=='/'){
 		command[0] = '.'; command[1] = '\0';
-		idx = 2;
+		idx = 1;
 	}
 	else{
 		while (input[idx] != ' ' && input[idx] != '\0')
@@ -191,7 +194,7 @@ void splitInput(char *input, char *command, char *argc, char *argv){
 	}
 	// idx berada di posisi sebelum karakter pertama argv
 	if (input[idx] != '\0'){
-		++idx; // diposisi karakter pertama argv
+		while(input[idx]==' ') ++idx; // diposisi karakter pertama argv
 		split(input+idx,' ',argv,argc,ARGS_LENGTH);
 	}
 }
