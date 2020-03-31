@@ -53,8 +53,11 @@ void split(char *input, char separator, char *argv, char *argc, int rowLen){
 		}
 		else if (input[idx] == separator){
 			argv[row*rowLen+col] = '\0';
-			++row;
-			col = -1;
+			while (input[idx+1] == separator) ++idx;
+			if (input[idx+1]!='\0') {
+				col = -1;
+				++row;
+			}
 		}
 		else{
 			argv[row*rowLen+col] = input[idx];
@@ -75,8 +78,14 @@ void splitPath(char *path, char *pathTo, char *filename){
 		}
 		++idx;
 	}
-	for (idx=0; idx<idxMid; ++idx){
-		pathTo[idx] = path[idx];
+	idx = 0;
+	if (idxMid==0){
+		pathTo[idx++] = '/';
+	}
+	else{
+		for (idx=0; idx<idxMid; ++idx){
+			pathTo[idx] = path[idx];
+		}
 	}
 	pathTo[idx] = '\0';
 	for (idx=idxMid+1; path[idx] != '\0'; ++idx){
@@ -110,9 +119,20 @@ char getIdxFileSector(int fileIdx){
 	return files[fileIdx*FILES_ENTRY_LENGTH+1];
 }
 
+void setFileEntry(char *entry, int fileIdx){
+	char files[SECTOR_FILES_SIZE];
+
+	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+	copyString(entry,files+fileIdx*FILES_ENTRY_LENGTH,0);
+	interrupt(0x21, 0x3, files, FILES_SECTOR, 0);
+    interrupt(0x21, 0x3, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+}
+
+
 void goToFolder(char *path, int *result, char *parentIndex){
 	int iterPath=0,i=0, idxPathNext;
-	char front[MAX_FILENAME], isRoot = TRUE, files[SECTOR_FILES_SIZE];
+	char front[MAX_FILENAME], files[SECTOR_FILES_SIZE];
 
 	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
     interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
@@ -120,15 +140,14 @@ void goToFolder(char *path, int *result, char *parentIndex){
 	*result = 1; // anggap berhasil dulu. Nanti kalau gagal baru di ubah
 	// copy namafolder
 	while(path[iterPath]!='\0'){
-		if (path[iterPath]=='/'){
+		if ((path[iterPath]=='/') && (iterPath==0)){
+			*parentIndex = 0xFF;
+		}
+		else if (path[iterPath]=='/'){
 			front[i] = '\0';
 			if (compare2String(front,"..")){
 				// ke index parent
 				if (*parentIndex != 0xFF) *parentIndex = files[*parentIndex*FILES_ENTRY_LENGTH];
-			}
-			else if (front[0] == '\0' && isRoot){
-				*parentIndex = 0xFF;
-				return;
 			}
 			else if (!compare2String(front,"."))
 			{
@@ -152,7 +171,6 @@ void goToFolder(char *path, int *result, char *parentIndex){
 					return;
 				}
 			}
-			isRoot = FALSE;
 			// bersihkan lagi front
 			clear(front, MAX_FILENAME);
 			i = 0;

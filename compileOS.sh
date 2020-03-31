@@ -56,9 +56,13 @@ ld86 -o cat -d cat.o lib/utils.o lib/file.o lib/teks.o lib/math.o lib_asm.o || e
 bcc -ansi -c -o rm.o rm.c || exit 1
 ld86 -o rm -d rm.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
 ./loadFile rm
+bcc -ansi -c -o mv.o mv.c || exit 1
+ld86 -o mv -d mv.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
+./loadFile mv
 
-echo 'Load key.txt to system.img'
+echo 'Load key.txt, catatan.txt to system.img'
 ./loadFile key.txt
+./loadFile catatan.txt
 
 echo 'Start the emulator'
 bochs -f if2230.config

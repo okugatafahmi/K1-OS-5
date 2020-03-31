@@ -19,7 +19,7 @@ int main(){
             if (idxTo == FILE_NOT_FOUND){
                 printString("rm: cannot remove '");
                 printString(argv+i*ARGS_LENGTH);
-                printString("' : No such file or directory2");
+                printString("' : No such file or directory");
             }
             else{
                 idxS = getIdxFileSector(idxTo);
@@ -29,7 +29,7 @@ int main(){
                 else{
                     deleteFile(filename, 0, parentIndexTo);
                 }
-                printString("rm: success to remove '");
+                printString("rm: succeed to remove '");
                 printString(argv+i*ARGS_LENGTH);
                 printString("'");
             }
@@ -37,7 +37,7 @@ int main(){
         else if (success==FILE_NOT_FOUND){
             printString("rm: cannot remove '");
             printString(argv+i*ARGS_LENGTH);
-            printString("' : No such file or directory1");
+            printString("' : No such file or directory");
         }
         else{
             printString("rm: cannot remove '");

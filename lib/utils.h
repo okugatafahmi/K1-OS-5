@@ -40,6 +40,11 @@ int findIdxFilename(char *filename, char parentIndex);
 char getIdxFileSector(int fileIdx);
 
 /**
+ * Mengeset entry suatu file
+ */
+void setFileEntry(char *entry, int fileIdx);
+
+/**
  * Menuju ke folder dengan pathnya path dan sekarang sedang di parentIndex.
  * result akan bernilai:
  * 1, jika folder berhasil pindah
