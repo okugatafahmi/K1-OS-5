@@ -4,7 +4,7 @@
 /**
  * Membuat Folder Baru
  */
-void createFolder();
+void createFolder(char *path, int *result, char parentIndex);
 
 /**
  * Menghapus folder dengan pathnya path dan sekarang sedang di parentIndex.

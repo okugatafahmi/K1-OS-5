@@ -10,7 +10,9 @@ void createFolder(char *path, int *result, char parentIndex)
 	char folderName[FILES_ENTRY_LENGTH];
 	int i = 0;
 	
-	interrupt(0x21, 0x02, sectorFolder, FILES_SECTOR, 0);
+	interrupt(0x21, 0x2, sectorFolder, FILES_SECTOR, 0);
+	interrupt(0x21, 0x2, sectorFolder + SECTOR_SIZE, FILES_SECTOR + 1, 0);
+
 	while ((i < MAX_SECTORS_FILESECTOR) && sectorFolder[i * FILES_ENTRY_LENGTH + 1] != 0) i++;
 
 	if (i == SECTOR_SIZE) *result = INSUFFICIENT_SECTORS;
