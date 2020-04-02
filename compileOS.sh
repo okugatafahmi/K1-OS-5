@@ -28,6 +28,7 @@ bcc -ansi -c -o lib/folder.o lib/folder.c || exit 1
 bcc -ansi -c -o lib/utils.o lib/utils.c || exit 1
 bcc -ansi -c -o lib/file.o lib/file.c || exit 1
 bcc -ansi -c -o lib/teks.o lib/teks.c || exit 1
+bcc -ansi -c -o lib/extTeks.o lib/extTeks.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
@@ -46,7 +47,7 @@ ld86 -o shell -d shell.o lib_asm.o lib/folder.o lib/file.o lib/utils.o || exit 1
 
 echo 'Compile, link, and load mikro.c'
 bcc -ansi -c -o mikro.o mikro.c || exit 1
-ld86 -o mikro -d mikro.o lib_asm.o || exit 1
+ld86 -o mikro -d mikro.o lib_asm.o lib/math.o lib/file.o lib/utils.o lib/teks.o lib/extTeks.o || exit 1
 ./loadFile mikro
 
 echo 'Compile & load all utility file'

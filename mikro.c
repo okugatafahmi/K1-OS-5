@@ -1,85 +1,96 @@
-#define SECTOR_SIZE 512
-#define MAP_SECTOR 0x100
-#define FILES_SECTOR 0X101
-#define SECTORS_SECTOR 0x103
-#define MAX_FILES 64
-#define MAX_SECTORS_FILESECTOR 32
-#define FILES_ENTRY_LENGTH 16
-#define MAX_FILENAME 14
-#define MAX_FILESECTOR 16
-#define EMPTY 0x00
-#define USED 0xFF
-#define FILE_NOT_FOUND -1
-#define FILE_HAS_EXIST -1
-#define INSUFFICIENT_FILES -2
-#define INSUFFICIENT_SECTORS -3
-#define INVALID_FOLDER -4
-#define TRUE 1
-#define FALSE 0
+#include "lib/defines.h"
+#include "lib/math.h"
+#include "lib/teks.h"
+#include "lib/utils.h"
+#include "lib/file.h"
+#include "lib/extTeks.h"
 
-char findLastChar(char *buffer, int *idx);
+int len(char *buffer);
 int countSector(char *buffer);
+void readStringTeks(char *string, char *signal, int *len);
+void ketSaveFile(char *filename, int sector);
+void tulisFile(char *buffer, char *filename, int *sector, char parentIndex);
 
 int main(){
     char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[MAX_FILENAME*MAX_FILES];
-    char isWrite = TRUE, lastC;
+    char isWrite = TRUE, signal, isValid, opt[MAX_FILENAME];
     int idx, idxTotal,success,sector;
+    char parentIndex = 0xFF;
 
-    interrupt(0x21, 0x0, "masuk\n\r", 0, 0);
+    printString("-------Selamat Datang di Mikro (Rivalnya Nano)-------\n\r");
     idx = 0; idxTotal = 0;
+    filename[0] = 0;
     while (isWrite){
-        interrupt(0x21, 0x1, buffer+idxTotal, 0, 0);
-        lastC = findLastChar(buffer+idxTotal, &idx);
+        signal = 0;
+        readStringTeks(buffer+idxTotal, &signal, &idx);
         idxTotal += idx;
-        if (lastC == 24){ // close file
+        // printInt((int)signal);
+        if (signal == CTRL_X){ // close file
             buffer[idxTotal] = '\0';
             success = FALSE;
             while (success!=TRUE)
             {
-                sector = countSector(buffer);
-                interrupt(0x21, 0x0, "\r\n\nNama file yang disimpan: ", 0, 0);
-                interrupt(0x21, 0x1, filename, 0, 0);
-                interrupt(0x21, (0x2 << 8) | 0x5, buffer, filename, &sector);
-                if (sector>0){
-                    interrupt(0x21, 0x0, "File ", 0,0);
-                    interrupt(0x21, 0x0, filename, 0,0);
-                    interrupt(0x21, 0x0, " berhasil disimpan.\n\r", 0,0);
+                printString("\r\n");
+                isValid = FALSE;
+                while (!isValid){
+                    printString("\nApakah ingin disimpan: ");
+                    readString(opt);
+                    if (compare2String(opt,"Y") || compare2String(opt,"y") || 
+                        compare2String(opt,"N") || compare2String(opt,"n")){
+                            isValid = TRUE;
+                        }
+                    else{
+                        printString("Pilihan salah\n\r");
+                    }
+                }
+                if (compare2String(opt,"Y") || compare2String(opt,"y")){
+                    sector = countSector(buffer);
+                    if (sector>MAX_FILESECTOR){
+                        printString("Ukuran file terlalu besar\n\r");
+                        success = TRUE;
+                    }
+                    else if (filename[0] != 0){  // sudah pernah disimpan
+                        saveFile(buffer,&sector,findIdxFilename(filename,parentIndex));
+                        ketSaveFile(filename, sector);
+                        success = TRUE;
+                    }
+                    else{
+                        while (success != TRUE){
+                            success = sector;
+                            printString("Nama file yang disimpan: ");
+                            readString(filename);
+                            tulisFile(buffer, filename, &success, parentIndex);
+                        }
+                    }
+                }
+                else{
                     success = TRUE;
-                }
-                else if (sector == FILE_HAS_EXIST)
-                {
-                    interrupt(0x21, 0x0, "File sudah ada", 0, 0);
-                }
-                else if (sector == INSUFFICIENT_FILES)
-                {
-                    interrupt(0x21, 0x0, "Tidak cukup menampung file", 0, 0);
-                }
-                else if (sector == INSUFFICIENT_SECTORS)
-                {
-                    interrupt(0x21, 0x0, "Tidak cukup menyimpan isi file", 0, 0);
-                }
-                else if (sector == INVALID_FOLDER)
-                {
-                    interrupt(0x21, 0x0, "Folder tidak valid", 0, 0);
                 }
             }
             isWrite = FALSE;
         }
-        else if (lastC == 15) // open file
+        else if (signal == CTRL_O) // open file
         {
             success = FALSE;
             while (success!=TRUE)
             {
-                interrupt(0x21, 0x0, "\r\n\nNama file yang dibuka: ", 0, 0);
-                interrupt(0x21, 0x1, filename, 0, 0);
-                interrupt(0x21, (0x2 << 8) | 0x4, buffer, filename, &success);
+                printString("\r\n\nNama file yang dibuka: ");
+                readString(filename);
+                readFile(buffer, filename, &success, parentIndex);
                 if (success == FILE_NOT_FOUND){
-                    interrupt(0x21, 0x0, "File tidak ada", 0, 0);
+                    printString("File tidak ada");
                 }
                 else{
-                    interrupt(0x21, 0x0, buffer, 0, 0);
-                    findLastChar(buffer, &idxTotal);
+                    printString(buffer);
+                    idxTotal = len(buffer);
                 }
+            }
+        }
+        else if (signal == CTRL_S)  // save file
+        {
+            if (filename[0]!=0){
+                sector = countSector(buffer);
+                saveFile(buffer,&sector,findIdxFilename(filename,parentIndex));
             }
         }
         else
@@ -91,13 +102,12 @@ int main(){
     }
 }
 
-char findLastChar(char *buffer, int *idx){
+int len(char *buffer){
     int i;
-    for (i=0; buffer[i] != 24 && buffer[i] != 15 && buffer[i] != 0; ++i)
+    for (i=0; buffer[i] != 0; ++i)
     {
     }
-    *idx = i;
-    return buffer[i];
+    return i;
 }
 
 int countSector(char *buffer){
@@ -110,4 +120,33 @@ int countSector(char *buffer){
         ++i;
     }
     return ++cntRes;
+}
+
+void ketSaveFile(char *filename, int sector){
+    if (sector==1){
+        printString("File ");
+        printString(filename);
+        printString(" berhasil disimpan.\n\r");
+    }
+    else if (sector == FILE_HAS_EXIST)
+    {
+        printString("File sudah ada\n\r");
+    }
+    else if (sector == INSUFFICIENT_FILES)
+    {
+        printString("Tidak cukup menampung file\n\r");
+    }
+    else if (sector == INSUFFICIENT_SECTORS)
+    {
+        printString("Tidak cukup menyimpan isi file\n\r");
+    }
+    else if (sector == INVALID_FOLDER)
+    {
+        printString("Folder tidak valid\n\r");
+    }
+}
+
+void tulisFile(char *buffer, char *filename, int *sector, char parentIndex){
+    writeFile(buffer, filename, sector, parentIndex);
+    ketSaveFile(filename, *sector);
 }

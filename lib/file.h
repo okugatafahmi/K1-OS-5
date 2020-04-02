@@ -33,4 +33,11 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
  */
 void deleteFile(char *path, int *result, char parentIndex);
 
+/**
+ * Menyimpan file
+ * * result bernilai:
+ * 1, jika berhasil disimpan
+ * -3, jika tidak cukup sektor kosong
+ */
+void saveFile(char *buffer, char *sector, int idxFile);
 #endif

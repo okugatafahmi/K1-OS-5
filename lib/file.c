@@ -110,6 +110,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
       interrupt(0x21, 0x3, files, FILES_SECTOR, 0);
       interrupt(0x21, 0x3, files + SECTOR_SIZE, FILES_SECTOR+1, 0);
       interrupt(0x21, 0x3, sectorsFile, SECTORS_SECTOR, 0);
+      *sectors = TRUE;
     }
   }
   else
@@ -170,4 +171,14 @@ void deleteFile(char *path, int *result, char parentIndex){
     interrupt(0x21, 0x3, files, FILES_SECTOR, 0);
     interrupt(0x21, 0x3, files + SECTOR_SIZE, FILES_SECTOR+1, 0);
     interrupt(0x21, 0x3, sectors, SECTORS_SECTOR, 0);
+}
+
+void saveFile(char *buffer, char *sector, int idxFile){
+  char files[SECTOR_FILES_SIZE], entryFile[FILES_ENTRY_LENGTH];
+
+  interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
+  interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
+  copyString(files + idxFile*FILES_ENTRY_LENGTH, entryFile,0);
+  deleteFile(entryFile+2, 0, entryFile[0]);
+  writeFile(buffer, entryFile+2, sector, entryFile[0]);
 }
