@@ -6,6 +6,7 @@
  * result bernilai:
  * 1, jika berhasil dibaca
  * -1, jika file tidak ada
+ * -2, jika ternyata filenya berupa folder
  * buffer berisi isi file
  */
 void readFile(char *buffer, char *path, int *result, char parentIndex);
@@ -22,7 +23,14 @@ void readFile(char *buffer, char *path, int *result, char parentIndex);
  */
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex);
 
-
+/**
+ * Hapus file
+ * result bernilai:
+ * 1, jika berhasil dihapus
+ * -1, jika file tidak ada
+ * -2, jika ternyata filenya berupa folder
+ * buffer berisi isi file
+ */
 void deleteFile(char *path, int *result, char parentIndex);
 
 #endif

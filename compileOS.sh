@@ -31,7 +31,7 @@ bcc -ansi -c -o lib/teks.o lib/teks.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
-ld86 -o kernel -d kernel.o lib/math.o kernel_asm.o || exit 1
+ld86 -o kernel -d kernel.o kernel_asm.o lib/math.o lib/utils.o lib/file.o || exit 1
 
 echo 'Copy kernel to system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=1

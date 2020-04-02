@@ -7,8 +7,8 @@
 
 	bits 16
 KSEG	equ	0x1000		;Lokasi kernel = 0x10000
-KSIZE	equ	10		;Ukuran kernel = 10 sektor
-KSTART	equ	1		;Lokasi kernel = sektor 3
+KSIZE	equ	13		;Ukuran kernel = 13 sektor
+KSTART	equ	1		;Lokasi kernel = sektor 1
 
 	;boot loader starts at 0 in segment 0x7c00
 	org 0h
