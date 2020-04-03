@@ -68,8 +68,7 @@ int main(){
                         // kalau sama2 file, di overwrite
                         else if (idxSectorSource != 0xFF){
                             deleteFile(filenameTarget, 0, parentIndexTarget);
-                            writeFile(buffer, fileEntry+2, idxSectorSource, parentIndex);
-                            createFolder(filenameTarget, 0, parentIndexTarget);
+                            writeFile(idxSource, fileEntry+2, idxSectorSource, parentIndex);
                             // rename(parentIndexTarget, idxSectorSource, filenameTarget, idxSource);
                             succeed(argv,argv+ARGS_LENGTH);
                         }
