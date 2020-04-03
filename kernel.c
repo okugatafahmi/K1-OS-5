@@ -99,6 +99,9 @@ void printString(char *string)
   while (string[i] != '\0')
   {
     interrupt(0x10, (0xE * 256) + string[i], 0, 0);
+    if (string[i] == '\n'){
+      interrupt(0x10, (0xE * 256) + '\r', 0, 0);
+    }
     i++;
   }
 }

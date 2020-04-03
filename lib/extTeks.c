@@ -1,4 +1,5 @@
 #include "extTeks.h"
+#include "video.h"
 
 void readStringTeks(char *string, char *signal, int *len)
 {
@@ -8,7 +9,7 @@ void readStringTeks(char *string, char *signal, int *len)
     char posX,posY,minX;
     char isSignal = 0;
 
-    while (input != '\r')
+    while (isSignal == 0)
     {
         ax = 0; bx = 0; cx = 0; dx  = 0;
         input = interruptEdit(0x16, &ax, &bx, &cx, &dx);
@@ -27,25 +28,25 @@ void readStringTeks(char *string, char *signal, int *len)
         else if (input==CTRL_O || input==CTRL_S || input == CTRL_X)
         {
             isSignal = 1;
-            break;
         }
         else if (ax==UP || ax==DOWN){
-
+            
         }
         else
         {
-            string[i] = input;
+            if (input=='\r'){
+                interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
+                string[i] = '\n';
+            }
+            else{
+                string[i] = input;
+            }
             interrupt(0x10, 0xE00 + input, 0, 0, 0);
-            if (input != '\r')
-                i++;
+            i++;
         }
     }
     if (isSignal) *signal=input;
     else *signal = 0;
     string[i] = '\0';
-    if (*signal!=CTRL_S){
-        interrupt(0x10, 0xE00 + '\n', 0, 0, 0);
-        interrupt(0x10, 0xE00 + '\r', 0, 0, 0);
-    }
     *len = i;
 }

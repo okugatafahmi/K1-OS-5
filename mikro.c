@@ -1,23 +1,29 @@
 #include "lib/defines.h"
-#include "lib/math.h"
 #include "lib/teks.h"
 #include "lib/utils.h"
 #include "lib/file.h"
 #include "lib/extTeks.h"
+#include "lib/video.h"
 
 int len(char *buffer);
 int countSector(char *buffer);
 void readStringTeks(char *string, char *signal, int *len);
 void ketSaveFile(char *filename, int sector);
 void tulisFile(char *buffer, char *filename, int *sector, char parentIndex);
+void render(char *title);
+void clearKet();
 
 int main(){
-    char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[MAX_FILENAME*MAX_FILES];
+    char buffer[SECTOR_SIZE*MAX_FILESECTOR], filename[MAX_FILENAME];
+    char title[(int)WIDTH+2];
     char isWrite = TRUE, signal, isValid, opt[MAX_FILENAME];
-    int idx, idxTotal,success,sector;
+    int idx, idxTotal,success,sector,i;
     char parentIndex = 0xFF;
 
-    printString("-------Selamat Datang di Mikro (Rivalnya Nano)-------\n\r");
+    clrscr();
+    copyString("----------------    Selamat Datang di Mikro (Rivalnya Nano)!    ----------------",title,0);
+    render(title);
+    setPos(1, 0);
     idx = 0; idxTotal = 0;
     filename[0] = 0;
     while (isWrite){
@@ -30,18 +36,16 @@ int main(){
             success = FALSE;
             while (success!=TRUE)
             {
-                printString("\r\n");
                 isValid = FALSE;
                 while (!isValid){
-                    printString("\nApakah ingin disimpan: ");
+                    clearKet();
+                    printString("Apakah ingin disimpan (Y/N): ");
                     readString(opt);
                     if (compare2String(opt,"Y") || compare2String(opt,"y") || 
                         compare2String(opt,"N") || compare2String(opt,"n")){
                             isValid = TRUE;
                         }
-                    else{
-                        printString("Pilihan salah\n\r");
-                    }
+                    clearKet();
                 }
                 if (compare2String(opt,"Y") || compare2String(opt,"y")){
                     sector = countSector(buffer);
@@ -74,7 +78,8 @@ int main(){
             success = FALSE;
             while (success!=TRUE)
             {
-                printString("\r\n\nNama file yang dibuka: ");
+                clearKet();
+                printString("Nama file yang dibuka: ");
                 readString(filename);
                 readFile(buffer, filename, &success, parentIndex);
                 if (success == FILE_NOT_FOUND){
@@ -149,4 +154,21 @@ void ketSaveFile(char *filename, int sector){
 void tulisFile(char *buffer, char *filename, int *sector, char parentIndex){
     writeFile(buffer, filename, sector, parentIndex);
     ketSaveFile(filename, *sector);
+}
+
+void render(char *title){
+    int i;
+
+    printString(title);
+    setPos(MAX_ROW+1, 0);
+    for (i=0; i<=MAX_COL; ++i){
+        printString("-");
+    }
+    printString("^X: Keluar      ^S: Menyimpan      ^O: Membuka");
+}
+
+void clearKet(){
+    setPos(MAX_ROW+2, 0);
+    clearLine();
+    setPos(MAX_ROW+2, 0);
 }
