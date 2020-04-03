@@ -32,7 +32,7 @@ bcc -ansi -c -o lib/extTeks.o lib/extTeks.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
-ld86 -o kernel -d kernel.o kernel_asm.o lib/math.o lib/utils.o lib/file.o || exit 1
+ld86 -o kernel -d kernel.o kernel_asm.o lib/math.o lib/utils.o || exit 1
 
 echo 'Copy kernel to system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=1
@@ -60,6 +60,9 @@ ld86 -o rm -d rm.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib
 bcc -ansi -c -o mv.o mv.c || exit 1
 ld86 -o mv -d mv.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
 ./loadFile mv
+bcc -ansi -c -o mkdir.o mkdir.c || exit 1
+ld86 -o mkdir -d mkdir.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
+./loadFile mkdir
 
 echo 'Load key.txt, catatan.txt to system.img'
 ./loadFile key.txt

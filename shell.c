@@ -107,13 +107,15 @@ int commandType(char *command){
 
 void readString(char *string, char *history, int cntIsiHistory)
 {
-  int i = 0, inputReal, idxHistory=cntIsiHistory;
+  int i = 0, idxHistory=cntIsiHistory;
   char input = 0, temp[SECTOR_FILES_SIZE];
   char copyToTemp = FALSE;
+  int ax,bx,cx,dx;
   while (input != '\r')
   {
-    inputReal = interrupt(0x16, 0, 0, 0, 0);
-	input = (char) inputReal;
+	ax = 0; bx=0; cx=0; dx=0;
+    input = interruptEdit(0x16, &ax, &bx, &cx, &dx);
+	// input = (char) inputReal;
     if (input == '\b')
     {
       if (i > 0)
@@ -124,10 +126,10 @@ void readString(char *string, char *history, int cntIsiHistory)
         string[--i] = '\0';
       }
     }
-	else if ((inputReal == 0x4800 || inputReal == 0x5000))
+	else if ((ax == 0x4800 || ax == 0x5000))
 	{
 		if (cntIsiHistory==0) continue;
-		if (inputReal == 0x4800 && idxHistory>0) // up arrow key
+		if (ax == 0x4800 && idxHistory>0) // up arrow key
 		{
 			--idxHistory;
 			if (idxHistory==cntIsiHistory-1) {	// nyimpen command yang dimasukkan
@@ -135,7 +137,7 @@ void readString(char *string, char *history, int cntIsiHistory)
 				copyToTemp = TRUE;
 			}
 		}
-		else if (inputReal == 0x5000 && idxHistory<cntIsiHistory) // down arrow key
+		else if (ax == 0x5000 && idxHistory<cntIsiHistory) // down arrow key
 		{
 			++idxHistory;
 		}
