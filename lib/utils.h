@@ -58,12 +58,12 @@ void goToFolder(char *path, int *result, char *parentIndex);
 /**
  * Menaruh argumen berikut ke ARGS_SECTOR
  */
-void putArgs(char idxNow,char argc, char *argv);
+void putArgs(char idxNow, char argc, char *argv);
 
 /**
  * Mendapatkan argumen berikut dari ARGS_SECTOR
  */
-void getArgs(char *idxNow,char *argc, char *argv);
+void getArgs(char *idxNow, char *argc, char *argv);
 
 /**
  * Menghitung sector file

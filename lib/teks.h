@@ -5,5 +5,4 @@ void printInt(int num);
 void printString(char *string);
 void readString(char *string);
 
-
 #endif
