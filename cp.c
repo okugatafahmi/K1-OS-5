@@ -136,8 +136,18 @@ int main(){
                     idxSource = findIdxFilename(filenameSource, parentIndexSource);
                     if (idxSource != FILE_NOT_FOUND){
                         idxSectorSource = getIdxFileSector(idxSource);
-                        // rename(idxTarget,idxSectorSource,filenameSource,idxSource);
-                        succeed(argSource,argTarget);
+                        if (idxSectorSource != 0xFF){
+                            readFile(buffer,filenameSource,0,parentIndexSource);
+                            sectors = countSector(buffer);
+                            writeFile(buffer,filenameSource,&sectors,(char) idxTarget);
+                        }
+                        else {
+                            copyFolder(filenameSource,filenameSource,&success,parentIndexSource,parentIndexTarget);
+                        }
+                        ketCopy(success,argSource,argTarget);
+                        if (success == INSUFFICIENT_FILES || success == INSUFFICIENT_SECTORS){
+                            break;
+                        }
                     }
                     else{
                         notFound(argSource);
@@ -195,7 +205,7 @@ void ketCopy(int success, char *source, char *dest){
         succeed(source,dest);
     }
     else if (success == INSUFFICIENT_FILES){
-            printString("cp: insufficient files");
+        printString("cp: insufficient files");
     }
     else if (success == INSUFFICIENT_SECTORS){
         printString("cp: insufficient sector of file");

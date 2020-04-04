@@ -205,7 +205,7 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
   }
 
   idxP = findIdxFilename(filename, parentIndex);
-  if (idxP != -1){  // menemukan filename yang sama di parent index tsb
+  if (idxP != FILE_NOT_FOUND){  // menemukan filename yang sama di parent index tsb
     *sectors = FILE_HAS_EXIST;
     return;
   }

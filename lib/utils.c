@@ -70,7 +70,7 @@ void split(char *input, char separator, char *argv, char *argc, int rowLen){
 }
 
 void splitPath(char *path, char *pathTo, char *filename){
-	int idxMid=-1, idx=0;
+	int idxMid=-1, idx=0, idxLastPathTo;
 
 	while (path[idx] != '\0'){
 		if (path[idx] == '/'){
@@ -88,10 +88,20 @@ void splitPath(char *path, char *pathTo, char *filename){
 		}
 	}
 	pathTo[idx] = '\0';
+	idxLastPathTo = idx;
 	for (idx=idxMid+1; path[idx] != '\0'; ++idx){
 		filename[idx-(idxMid+1)] = path[idx];
 	}
 	filename[idx-(idxMid+1)] = '\0';
+	
+	if (compare2String(filename,".") || compare2String(filename,"..")){
+		idx = 0; pathTo[idxLastPathTo++] = '/';
+		while (filename[idx]!='\0'){
+			pathTo[idxLastPathTo++] = filename[idx++];
+		}
+		pathTo[idxLastPathTo] = '\0';
+		filename[0] = '\0'; filename[1] = '\0';
+	}
 }
 
 int findIdxFilename(char *filename, char parentIndex){
@@ -155,7 +165,7 @@ void goToFolder(char *path, int *result, char *parentIndex){
 				// go to folder yang di cd in
 				idxPathNext = findIdxFilename(front, *parentIndex);
 
-				if (idxPathNext != -1){
+				if (idxPathNext != FILE_NOT_FOUND){
 					if (files[idxPathNext*FILES_ENTRY_LENGTH+1]==0xFF){ // kalau dia folder, masuk
 						// ganti jadi index baru
 						*parentIndex = idxPathNext;
@@ -192,7 +202,7 @@ void goToFolder(char *path, int *result, char *parentIndex){
 		// go to folder yang di cd in
 		idxPathNext = findIdxFilename(front, *parentIndex);
 
-		if (idxPathNext != -1){
+		if (idxPathNext != FILE_NOT_FOUND){
 			if (files[idxPathNext*FILES_ENTRY_LENGTH+1]==0xFF){ // kalau dia folder, masuk
 				// ganti jadi index baru
 				*parentIndex = idxPathNext;

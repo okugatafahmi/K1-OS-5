@@ -26,7 +26,7 @@ void createFolder(char *path, int *result, char parentIndex)
 
 	// cek apakah folder sudah ada
 	i = findIdxFilename(folderName, parentIndex);
-	if (i != -1){
+	if (i != FILE_NOT_FOUND){
 		*result = FILE_HAS_EXIST;
 		return;
 	}
