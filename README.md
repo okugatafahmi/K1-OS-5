@@ -44,27 +44,27 @@ Don't forget to `chmod` the file once:
     </tr>
     <tr>
         <td>mv</td>
-        <td>mv [file/folder] [target folder]</td>
+        <td><code>mv [file/folder] [target folder]</code></td>
         <td>move file/folder to target folder</td>
     </tr>
     <tr>
         <td>cp</td>
-        <td>cp [file/folder] [target file/folder]</td>
+        <td><code>cp [file/folder] [target file/folder]</code></td>
         <td> copy file/folder to target file/folder</td>
     </tr>
     <tr>
         <td>mkdir</td>
-        <td>mkdir [folder]</td>
+        <td><code>mkdir [folder]</code></td>
         <td>create folder</td>
     </tr>
     <tr>
         <td>rm</td>
-        <td>rm [file/folder]</td>
+        <td><code>rm [file/folder]</code></td>
         <td>delete file or folder</td>
     </tr>
     <tr>
         <td>cat</td>
-        <td>cat [file]</td>
+        <td><code>cat [file]</code></td>
         <td>print text inside file</td>
     </tr>
     
