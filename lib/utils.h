@@ -48,8 +48,8 @@ void setFileEntry(char *entry, int fileIdx);
  * Menuju ke folder dengan pathnya path dan sekarang sedang di parentIndex.
  * result akan bernilai:
  * 1, jika folder berhasil pindah
- * -1, jika ada nama folder di path yang tidak ditemukan
- * -2, jika ternyata di pathnya ada yang berupa file (bukan directory/folder)
+ * INVALID_FOLDER, jika ada nama folder di path yang tidak ditemukan
+ * NOT_DIRECTORY, jika ternyata di pathnya ada yang berupa file (bukan directory/folder)
  * parentIndex akan bernilain posisi hasilnya. Jika gagal pindah, path akan terisi nama file penyebab
  * error.
  */
@@ -64,4 +64,10 @@ void putArgs(char idxNow,char argc, char *argv);
  * Mendapatkan argumen berikut dari ARGS_SECTOR
  */
 void getArgs(char *idxNow,char *argc, char *argv);
+
+/**
+ * Menghitung sector file
+ */
+int countSector(char *buffer);
+
 #endif

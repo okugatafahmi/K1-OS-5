@@ -98,6 +98,7 @@ int findIdxFilename(char *filename, char parentIndex){
 	char isFound, files[SECTOR_FILES_SIZE];
 	int idxFiles=0;
 
+	if (filename[0]=='\0') return FILE_NOT_FOUND;
 	interrupt(0x21, 0x2, files, FILES_SECTOR, 0);
     interrupt(0x21, 0x2, files+SECTOR_SIZE, FILES_SECTOR+1, 0);
 	isFound = FALSE;
@@ -161,13 +162,13 @@ void goToFolder(char *path, int *result, char *parentIndex){
 					}
 					else{ // kalau ternyata berupa file
 						copyString(front,path,0);
-						*result = -2;
+						*result = NOT_DIRECTORY;
 						return;
 					}
 				}
 				else{
 					copyString(front,path,0);
-					*result = -1;
+					*result = INVALID_FOLDER;
 					return;
 				}
 			}
@@ -198,12 +199,12 @@ void goToFolder(char *path, int *result, char *parentIndex){
 			}
 			else{ // kalau ternyata berupa file
 				copyString(front,path,0);
-				*result = -2;
+				*result = NOT_DIRECTORY;
 			}
 		}
 		else{
 			copyString(front,path,0);
-			*result = -1;
+			*result = INVALID_FOLDER;
 		}
 	}
 }
@@ -244,4 +245,16 @@ void getArgs(char *idxNow,char *argc, char *argv){
 		argv[i*ARGS_LENGTH+col] = '\0';
 		++i;
 	}
+}
+
+int countSector(char *buffer){
+    int cnt=0,cntRes=0,i=0;
+    while (buffer[i]!='\0'){
+        if (++cnt == SECTOR_SIZE)
+        {
+            ++cntRes;
+        }
+        ++i;
+    }
+    return ++cntRes;
 }

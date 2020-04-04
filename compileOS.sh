@@ -33,7 +33,7 @@ bcc -ansi -c -o lib/video.o lib/video.c || exit 1
 
 echo 'Compile & link kernel.c'
 bcc -ansi -c -o kernel.o kernel.c || exit 1
-ld86 -o kernel -d kernel.o kernel_asm.o lib/math.o lib/utils.o || exit 1
+ld86 -o kernel -d kernel.o kernel_asm.o lib/math.o lib/utils.o lib/teks.o || exit 1
 
 echo 'Copy kernel to system.img'
 dd if=kernel of=system.img bs=512 conv=notrunc seek=1
@@ -64,6 +64,9 @@ ld86 -o mv -d mv.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib
 bcc -ansi -c -o mkdir.o mkdir.c || exit 1
 ld86 -o mkdir -d mkdir.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
 ./loadFile mkdir
+bcc -ansi -c -o cp.o cp.c || exit 1
+ld86 -o cp -d cp.o lib/utils.o lib/file.o lib/folder.o lib/teks.o lib/math.o lib_asm.o || exit 1
+./loadFile cp
 
 echo 'Load key.txt, catatan.txt to system.img'
 ./loadFile key.txt

@@ -15,8 +15,13 @@ int main(){
     for (i=0; i<(int)argc; ++i){
         // read file terus print 
         readFile(buffer, argv+i*ARGS_LENGTH, &result, parentIndex);
-        if (result==1){
+        if (result == 1){
             printString(buffer);
+        }
+        else if (result == FILE_IS_DIRECTORY){
+            printString("cat: ");
+            printString(argv+i*ARGS_LENGTH);
+            printString(": Is a directory");
         }
         else{
             printString("cat: ");

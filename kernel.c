@@ -174,7 +174,7 @@ void readFile(char *buffer, char *path, int *result, char parentIndex)
 
   idxS = files[idxP * FILES_ENTRY_LENGTH+1];
   if (idxS == 0xFF){  // jika folder
-    *result = -2;
+    *result = FILE_IS_DIRECTORY;
     return;
   }
   iterSector = 0;
@@ -228,8 +228,8 @@ void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
     { // sector cukup
       clear(files + filesIndex * FILES_ENTRY_LENGTH, FILES_ENTRY_LENGTH);
       clear(sectorsFile + idxS * MAX_FILESECTOR, MAX_FILESECTOR);
-      files[filesIndex * FILES_ENTRY_LENGTH]  = idxP;
-      files[filesIndex * FILES_ENTRY_LENGTH + 1] = idxS;
+      files[filesIndex * FILES_ENTRY_LENGTH]  = parentIndex;
+      files[filesIndex * FILES_ENTRY_LENGTH + 1] = (char) idxS;
       // mengisi nama
       for (i = 0; i < MAX_FILENAME && path[i] != '\0'; ++i)
       {

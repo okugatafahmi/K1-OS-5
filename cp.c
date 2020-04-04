@@ -5,19 +5,21 @@
 #include "lib/file.h"
 
 void succeed(char *source, char *dest);
+void notSucceed(char *source, char *dest);
 void notFound(char *path);
 void notDir(char *path);
+void ketCopy(int success, char *source, char *dest);
 void targetNotDir(char *path);
-void rename(char parentIndex, char idxSector, char *filename, int idxFile);
 int getIdxTarget(char *argTarget, char parentIndexTarget);
 
 int main(){
     char parentIndex, parentIndexSource, parentIndexTarget, argc, argv[MAX_ARGS*ARGS_LENGTH];
     char pathSource[ARGS_LENGTH], filenameSource[MAX_FILENAME];
     char pathTarget[ARGS_LENGTH], filenameTarget[MAX_FILENAME];
+    char buffer[MAX_FILESECTOR*SECTOR_SIZE];
     char fileEntry[FILES_ENTRY_LENGTH];
     char idxSectorSource, idxSectorTarget, *argSource, *argTarget;
-    int i, idxSource, idxTarget, success;
+    int i, idxSource, idxTarget, success, sectors;
 
     getArgs(&parentIndex, &argc, argv);
     parentIndexSource = parentIndex;    parentIndexTarget = parentIndex;
@@ -31,7 +33,7 @@ int main(){
         splitPath(argv+ARGS_LENGTH, pathTarget, filenameTarget);
         // cari path source filenya
         goToFolder(pathSource, &success, &parentIndexSource);
-        if (success==1){
+        if (success == 1){
             // cari index file source
             idxSource = findIdxFilename(filenameSource, parentIndexSource);
             if (idxSource == FILE_NOT_FOUND){
@@ -39,21 +41,38 @@ int main(){
             }
             else{
                 goToFolder(pathTarget, &success, &parentIndexTarget);
-                if (success==1){
+                if (success == 1){
                     // cek apakah source berupa file atau folder
-                    idxSectorSource = getIdxFileSector(idxSource);                    
+                    idxSectorSource = getIdxFileSector(idxSource);
+                    // kalau dia file baca dulu isinya
+                    if (idxSectorSource!=0xFF){
+                        readFile(buffer,filenameSource,0,parentIndexSource);
+                        sectors = countSector(buffer);
+                    }
                     // cari index file target
                     idxTarget = findIdxFilename(filenameTarget, parentIndexTarget);
                     
-                    // kalau idxTarget FILE_NOT_FOUND, lakukan rename dan dipindahkan ke parentIndexTarget
+                    // kalau idxTarget FILE_NOT_FOUND, copy dengan nama target dan ditaruh di parentIndexTarget
                     if (idxTarget == FILE_NOT_FOUND){
                         if (compare2String(filenameTarget, "\0") ){ // kalau di move di root
-                            // rename(parentIndexTarget, idxSectorSource, filenameSource, idxSource);
+                            if (idxSectorSource != 0xFF) writeFile(buffer,filenameSource,&sectors,parentIndexTarget);
+                            else {
+                                copyFolder(filenameSource,filenameSource,&success,parentIndexSource,parentIndexTarget);
+                            }
                         }
                         else{
-                            // rename(parentIndexTarget, idxSectorSource, filenameTarget, idxSource);
+                            if (idxSectorSource != 0xFF) writeFile(buffer,filenameTarget,&sectors,parentIndexTarget);
+                            else {
+                                copyFolder(filenameSource,filenameTarget,&success,parentIndexSource,parentIndexTarget);
+                            }
                         }
-                        succeed(argv,argv+ARGS_LENGTH);
+                        
+                        if (success == 1){
+                            succeed(argv,argv+ARGS_LENGTH);
+                        }
+                        else{
+                            notSucceed(argv,argv+ARGS_LENGTH);
+                        }
                     }
                     else{
                         // cek apakah target berupa file atau folder
@@ -61,16 +80,17 @@ int main(){
 
                         // kalau berupa folder, dimasukkan
                         if (idxSectorTarget == 0xFF){
-                            // rename(idxTarget, idxSectorSource, filenameSource, idxSource);
-                            createFolder(filenameTarget, success, parentIndexTarget);
-                            succeed(argv,argv+ARGS_LENGTH);
+                            if (idxSectorSource != 0xFF) writeFile(buffer,filenameTarget,&sectors,(char) idxTarget);
+                            else {
+                                copyFolder(filenameSource,filenameSource,&success,parentIndexSource,parentIndexTarget);
+                            }
+                            ketCopy(success,argv,argv+ARGS_LENGTH);
                         }
                         // kalau sama2 file, di overwrite
                         else if (idxSectorSource != 0xFF){
                             deleteFile(filenameTarget, 0, parentIndexTarget);
-                            writeFile(idxSource, fileEntry+2, idxSectorSource, parentIndex);
-                            // rename(parentIndexTarget, idxSectorSource, filenameTarget, idxSource);
-                            succeed(argv,argv+ARGS_LENGTH);
+                            writeFile(buffer, filenameTarget, &sectors, parentIndex);
+                            ketCopy(success,argv,argv+ARGS_LENGTH);
                         }
                         else{
                             printString("cp: cannot overwrite non-directory '");
@@ -137,7 +157,15 @@ int main(){
 }
 
 void succeed(char *source, char *dest){
-    printString("cp: succeed to move '");
+    printString("cp: succeed to copy '");
+    printString(source);
+    printString("' to '");
+    printString(dest);
+    printString("'");
+}
+
+void notSucceed(char *source, char *dest){
+    printString("cp: not succeed to copy '");
     printString(source);
     printString("' to '");
     printString(dest);
@@ -162,13 +190,19 @@ void targetNotDir(char *path){
     printString("' is not a directory");
 }
 
-void rename(char parentIndex, char idxSector, char *filename, int idxFile){
-    char fileEntry[FILES_ENTRY_LENGTH];
-    
-    fileEntry[0] = parentIndex;
-    fileEntry[1] = idxSector;
-    copyString(filename,fileEntry+2,0);
-    setFileEntry(fileEntry,idxFile); // rename source   
+void ketCopy(int success, char *source, char *dest){
+    if (success == 1){
+        succeed(source,dest);
+    }
+    else if (success == INSUFFICIENT_FILES){
+            printString("cp: insufficient files");
+    }
+    else if (success == INSUFFICIENT_SECTORS){
+        printString("cp: insufficient sector of file");
+    }
+    else{
+        notSucceed(source,dest);
+    }
 }
 
 int getIdxTarget(char *argTarget, char parentIndexTarget){

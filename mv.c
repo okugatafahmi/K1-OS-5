@@ -31,7 +31,7 @@ int main(){
         splitPath(argv+ARGS_LENGTH, pathTarget, filenameTarget);
         // cari path source filenya
         goToFolder(pathSource, &success, &parentIndexSource);
-        if (success==1){
+        if (success == 1){
             // cari index file source
             idxSource = findIdxFilename(filenameSource, parentIndexSource);
             if (idxSource == FILE_NOT_FOUND){
@@ -39,7 +39,7 @@ int main(){
             }
             else{
                 goToFolder(pathTarget, &success, &parentIndexTarget);
-                if (success==1){
+                if (success == 1){
                     // cek apakah source berupa file atau folder
                     idxSectorSource = getIdxFileSector(idxSource);                    
                     // cari index file target
@@ -109,7 +109,7 @@ int main(){
                 splitPath(argSource,pathSource,filenameSource);
                 parentIndexSource = parentIndex;
                 goToFolder(pathSource, &success, &parentIndexSource);
-                if (success==1){
+                if (success == 1){
                     // cari index file source
                     idxSource = findIdxFilename(filenameSource, parentIndexSource);
                     if (idxSource != FILE_NOT_FOUND){

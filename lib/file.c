@@ -4,13 +4,13 @@
 
 void readFile(char *buffer, char *path, int *result, char parentIndex)
 {
-  interrupt(0x21, 0x4, buffer, path, result, parentIndex);
+  interrupt(0x21, parentIndex<<8 | 0x4, buffer, path, result);
 }
 
 
 void writeFile(char *buffer, char *path, int *sectors, char parentIndex)
 {
-  interrupt(0x21, 0x5, buffer, path, sectors, parentIndex);
+  interrupt(0x21, parentIndex<<8 | 0x5, buffer, path, sectors);
 }
 
 void deleteFile(char *path, int *result, char parentIndex){
@@ -43,7 +43,7 @@ void deleteFile(char *path, int *result, char parentIndex){
     // sectornya
     idxS = files[idxP * FILES_ENTRY_LENGTH+1];
     if (idxS == 0xFF){  // jika folder
-      *result = -2;
+      *result = FILE_IS_DIRECTORY;
       return;
     }
     iterSector = 0;

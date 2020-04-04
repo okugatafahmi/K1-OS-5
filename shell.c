@@ -1,4 +1,6 @@
 #include "lib/defines.h"
+#include "lib/folder.h"
+
 #define CD 0
 #define RUN_FILE 1
 #define LS 2
@@ -228,11 +230,11 @@ void executeCD(char *path, char *idxPathNowReal, char *pathNow){
 
 	goToFolder(path, &result, &idxPathNow);
 
-	if (result==-1){
+	if (result==INVALID_FOLDER){
 		interrupt(0x21, 0x0, path, 0, 0);
 		interrupt(0x21, 0x0, ": No such file or directory\n\r", 0, 0);
 	}
-	else if (result==-2){
+	else if (result==NOT_DIRECTORY){
 		interrupt(0x21, 0x0, path, 0, 0);
 		interrupt(0x21, 0x0, ": Not a directory\n\r", 0, 0);
 	}

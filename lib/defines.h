@@ -21,6 +21,10 @@
 #define INSUFFICIENT_FILES -2
 #define INSUFFICIENT_SECTORS -3
 #define INVALID_FOLDER -4
+#define NOT_DIRECTORY -5
+#define FILE_IS_DIRECTORY -6
+#define SAME_FOLDER -7
+
 #define TRUE 1
 #define FALSE 0
 

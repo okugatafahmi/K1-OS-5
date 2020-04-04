@@ -14,7 +14,7 @@ int main(){
         splitPath(argv+i*ARGS_LENGTH,pathTo,filename);
         parentIndexTo = parentIndex;
         goToFolder(pathTo, &success, &parentIndexTo);
-        if (success==1){
+        if (success == 1){
             idxTo = findIdxFilename(filename, parentIndexTo);
             if (idxTo == FILE_NOT_FOUND){
                 printString("rm: cannot remove '");
