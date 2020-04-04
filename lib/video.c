@@ -14,15 +14,25 @@ void clearLine(){
 void getPos(char *row, char *col){
     int ax=0x3<<8,bx=0,cx=0,dx=0;
     interruptEdit(0x10,&ax,&bx,&cx,&dx);
-    *row = (char) dx>>8; *col = (char) dx;
+    *row = (char)(dx>>8); *col = (char) dx;
 }
 
 void setPos(char row, char col){
     interrupt(0x10,0x2<<8,0,0,row<<8|col);
 }
 
+void scrollUp(){
+    char row,col;
+    interrupt(0x10,0x6<<8|LINE_SCROLL,0x7<<8,MIN_ROW<<8|MIN_COL,MAX_ROW<<8|MAX_COL);
+    getPos(&row, &col);
+    setPos(row-LINE_SCROLL,col);
+}
+
 void scrollDown(){
-    interrupt(0x10,0x7<<8|1,0x7<<8,0,HEIGHT<<8|WIDTH);
+    char row,col;
+    interrupt(0x10,0x7<<8|LINE_SCROLL,0x7<<8,MIN_ROW<<8|MIN_COL,MAX_ROW<<8|MAX_COL);
+    getPos(&row, &col);
+    setPos(row+LINE_SCROLL,col);
 }
 
 void printAtRow(char *string, char row){

@@ -86,6 +86,8 @@ int main(){
                     printString("File tidak ada");
                 }
                 else{
+                    render(title);
+                    setPos(1,0);
                     printString(buffer);
                     idxTotal = len(buffer);
                 }
@@ -105,6 +107,7 @@ int main(){
         }
         
     }
+    while(1){}
 }
 
 int len(char *buffer){
@@ -115,39 +118,27 @@ int len(char *buffer){
     return i;
 }
 
-int countSector(char *buffer){
-    int cnt=0,cntRes=0,i=0;
-    while (buffer[i]!='\0'){
-        if (++cnt == SECTOR_SIZE)
-        {
-            ++cntRes;
-        }
-        ++i;
-    }
-    return ++cntRes;
-}
-
 void ketSaveFile(char *filename, int sector){
     if (sector==1){
         printString("File ");
         printString(filename);
-        printString(" berhasil disimpan.\n\r");
+        printString(" berhasil disimpan");
     }
     else if (sector == FILE_HAS_EXIST)
     {
-        printString("File sudah ada\n\r");
+        printString("File sudah ada");
     }
     else if (sector == INSUFFICIENT_FILES)
     {
-        printString("Tidak cukup menampung file\n\r");
+        printString("Tidak cukup menampung file");
     }
     else if (sector == INSUFFICIENT_SECTORS)
     {
-        printString("Tidak cukup menyimpan isi file\n\r");
+        printString("Tidak cukup menyimpan isi file");
     }
     else if (sector == INVALID_FOLDER)
     {
-        printString("Folder tidak valid\n\r");
+        printString("Folder tidak valid");
     }
 }
 
@@ -159,6 +150,7 @@ void tulisFile(char *buffer, char *filename, int *sector, char parentIndex){
 void render(char *title){
     int i;
 
+    setPos(0,0);
     printString(title);
     setPos(MAX_ROW+1, 0);
     for (i=0; i<=MAX_COL; ++i){

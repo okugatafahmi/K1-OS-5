@@ -7,6 +7,7 @@
 #define MAX_ROW 0x15
 #define MIN_COL 0x0
 #define MAX_COL 0x4F
+#define LINE_SCROLL 0xA
 
 /**
  * Membersihkan layar
@@ -27,6 +28,8 @@ void getPos(char *row, char *col);
  * Set posisi cursor
  */
 void setPos(char row, char col);
+
+void scrollUp();
 
 void scrollDown();
 
