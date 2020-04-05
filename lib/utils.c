@@ -181,6 +181,7 @@ void goToFolder(char *path, int *result, char *parentIndex)
 	interrupt(0x21, 0x2, files + SECTOR_SIZE, FILES_SECTOR + 1, 0);
 	clear(front, MAX_FILENAME);
 	*result = 1; // anggap berhasil dulu. Nanti kalau gagal baru di ubah
+	if (path[0]=='\0') return;
 	// copy namafolder
 	while (path[iterPath] != '\0')
 	{

@@ -8,7 +8,7 @@ void printInt(int num)
 
   if (num == 0)
   {
-    interrupt(0x10, (0xE * 256) + '0', 0, 0);
+    interrupt(0x10, (0xE * 256) + '0', 0, 0, 0);
   }
   else
   {
@@ -24,11 +24,11 @@ void printInt(int num)
     }
     if (isNegative)
     {
-      interrupt(0x10, (0xE * 256) + '-', 0, 0);
+      interrupt(0x10, (0xE * 256) + '-', 0, 0, 0);
     }
     for (j = i - 1; j >= 0; j--)
     {
-      interrupt(0x10, (0xE * 256) + strNum[j], 0, 0);
+      interrupt(0x10, (0xE * 256) + strNum[j], 0, 0, 0);
     }
   }
 }

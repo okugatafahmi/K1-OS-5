@@ -6,7 +6,7 @@ void printStringTeksSub(char *string, int idxNow, char row, char col)
 {
     while (row <= MAX_ROW && string[idxNow] == 0)
     {
-        interrupt(0x10, (0xE * 256) + string[idxNow], 0, 0);
+        interrupt(0x10, (0xE * 256) + string[idxNow], 0, 0, 0);
         ++col;
         if (col == MAX_COL + 1)
         {
