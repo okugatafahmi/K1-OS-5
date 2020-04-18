@@ -70,4 +70,9 @@ void getArgs(char *idxNow, char *argc, char *argv);
  */
 int countSector(char *buffer);
 
+/**
+ * Execute program
+ */
+void executeProgram(char *filename, int segment, int *success, char parentIndex);
+
 #endif

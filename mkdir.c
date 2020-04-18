@@ -39,7 +39,5 @@ int main()
         }
         printString("\n\r");
     }
-    while (1)
-    {
-    }
+    executeProgram("shell",0x2000,0,0x1);
 }

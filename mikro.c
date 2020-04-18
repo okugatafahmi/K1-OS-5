@@ -9,6 +9,7 @@ int len(char *buffer);
 int countSector(char *buffer);
 void readStringTeks(char *string, char *signal, int *len);
 void ketSaveFile(char *filename, int sector);
+void ketOpenFile(char *buffer, char *title, int *idxTotal, int success);
 void tulisFile(char *buffer, char *filename, int *sector, char parentIndex);
 void render(char *title);
 void clearKet();
@@ -19,15 +20,45 @@ int main()
     char title[(int)WIDTH + 2];
     char isWrite = TRUE, signal, isValid, opt[MAX_FILENAME];
     int idx, idxTotal, success, sector, i;
-    char parentIndex = 0xFF;
+    char parentIndex = 0xFF, argc, argv[MAX_ARGS * ARGS_LENGTH], parentIndexRel, pathTo[ARGS_LENGTH];
 
-    clrscr();
-    copyString("----------------    Selamat Datang di Mikro (Rivalnya Nano)!    ----------------", title, 0);
-    render(title);
-    setPos(1, 0);
-    idx = 0;
-    idxTotal = 0;
-    filename[0] = 0;
+    getArgs(&parentIndex, &argc, argv);
+    if (argc > 1)
+    {
+        printString("Too many arguments\n\r");
+        executeProgram("shell", 0x2000, 0, 0x1);
+    }
+    else
+    {
+        clrscr();
+        copyString("----------------    Selamat Datang di Mikro (Rivalnya Nano)!    ----------------", title, 0);
+
+        if (argc == 1)
+        {
+            readFile(buffer, argv, &success, parentIndex);
+            ketOpenFile(buffer, title, &idxTotal, success);
+            if (success != 1)
+            {
+                printString("\n\r");
+                executeProgram("shell", 0x2000, 0, 0x1);
+            }
+            else
+            {
+                splitPath(argv, pathTo, filename);
+                parentIndexRel = parentIndex;
+                goToFolder(pathTo, 0, &parentIndexRel);
+            }
+            
+        }
+        else
+        {
+            render(title);
+            setPos(1, 0);
+            idx = 0;
+            idxTotal = 0;
+            filename[0] = 0;
+        }
+    }
     while (isWrite)
     {
         signal = 0;
@@ -63,7 +94,7 @@ int main()
                     }
                     else if (filename[0] != 0)
                     { // sudah pernah disimpan
-                        saveFile(buffer, &sector, findIdxFilename(filename, parentIndex));
+                        saveFile(buffer, &sector, findIdxFilename(filename, parentIndexRel));
                         ketSaveFile(filename, sector);
                         success = TRUE;
                     }
@@ -73,8 +104,8 @@ int main()
                         {
                             success = sector;
                             printString("Nama file yang disimpan: ");
-                            readString(filename);
-                            tulisFile(buffer, filename, &success, parentIndex);
+                            readString(argv);
+                            tulisFile(buffer, argv, &success, parentIndex);
                         }
                     }
                 }
@@ -94,17 +125,7 @@ int main()
                 printString("Nama file yang dibuka: ");
                 readString(filename);
                 readFile(buffer, filename, &success, parentIndex);
-                if (success == FILE_NOT_FOUND)
-                {
-                    printString("File tidak ada");
-                }
-                else
-                {
-                    render(title);
-                    setPos(1, 0);
-                    printString(buffer);
-                    idxTotal = len(buffer);
-                }
+                ketOpenFile(buffer, title, &idxTotal, success);
             }
         }
         else if (signal == CTRL_S) // save file
@@ -112,7 +133,7 @@ int main()
             if (filename[0] != 0)
             {
                 sector = countSector(buffer);
-                saveFile(buffer, &sector, findIdxFilename(filename, parentIndex));
+                saveFile(buffer, &sector, findIdxFilename(filename, parentIndexRel));
             }
         }
         else
@@ -121,9 +142,8 @@ int main()
             buffer[idxTotal++] = '\n';
         }
     }
-    while (1)
-    {
-    }
+    clrscr();
+    executeProgram("shell", 0x2000, 0, 0x1);
 }
 
 int len(char *buffer)
@@ -158,6 +178,25 @@ void ketSaveFile(char *filename, int sector)
     else if (sector == INVALID_FOLDER)
     {
         printString("Folder tidak valid");
+    }
+}
+
+void ketOpenFile(char *buffer, char *title, int *idxTotal, int success)
+{
+    if (success == FILE_NOT_FOUND)
+    {
+        printString("File tidak ada");
+    }
+    else if (success == FILE_IS_DIRECTORY)
+    {
+        printString("File adalah directory");
+    }
+    else
+    {
+        render(title);
+        setPos(1, 0);
+        printString(buffer);
+        *idxTotal = len(buffer);
     }
 }
 

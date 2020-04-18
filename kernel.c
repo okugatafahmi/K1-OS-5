@@ -16,21 +16,17 @@ void printLogo();
 
 int main()
 {
-  char buffer[SECTOR_SIZE * MAX_FILESECTOR], command[SECTOR_SIZE];
+  char buffer[SECTOR_SIZE * MAX_FILESECTOR];
   int success;
   printLogo();
   makeInterrupt21();
   while (1)
   {
-    printString("Anda mau apa: ");
-    readString(command);
-
-    executeProgram(command, 0x2000, &success, 0x01);
+    putArgs(0,0,0);
+    executeProgram("shell", 0x2000, &success, 0x01);
     if (success != 1)
     {
-      interrupt(0x21, 0x0, "Failed to execute ", 0, 0);
-      interrupt(0x21, 0x0, command, 0, 0);
-      interrupt(0x21, 0x0, "\n\r", 0, 0);
+      interrupt(0x21, 0x0, "Failed to execute shell\n\r", 0, 0);
     }
   }
 }

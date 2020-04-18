@@ -36,9 +36,21 @@ int main()
 		history[i] = '\0';
 	}
 
-	// path awal = root (/)
-	pathNow[0] = '/';
-	pathNow[1] = '\0';
+	getArgs(&idxNow, &argc, argv);
+	if (idxNow == 0) {
+		// path awal = root (/)
+		idxNow = 0xFF;
+		pathNow[0] = '/';
+		pathNow[1] = '\0';
+	}
+	else {
+		interrupt(0x21, 0x2, input, FILES_SECTOR, 0);
+		interrupt(0x21, 0x2, input + SECTOR_SIZE, FILES_SECTOR + 1, 0);
+		clear(pathNow, SECTOR_FILES_SIZE);
+		setPath(pathNow,idxNow, 0, input);
+		clear(input, SECTOR_FILES_SIZE);
+		putArgs(0,0,0);
+	}
 
 	while (isRun)
 	{
@@ -61,7 +73,8 @@ int main()
 			copyString(input, history + cntIsiHistory * SECTOR_FILES_SIZE, 0);
 			cntIsiHistory++;
 		}
-
+		argc = 0;
+		clear(argv,MAX_ARGS * ARGS_LENGTH);
 		splitInput(input, command, &argc, argv);
 		putArgs(idxNow, argc, argv);
 		type = commandType(command);

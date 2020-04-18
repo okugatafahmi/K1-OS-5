@@ -203,9 +203,7 @@ int main()
             }
         }
     }
-    while (1)
-    {
-    }
+    executeProgram("shell",0x2000,0,0x1);
 }
 
 void succeed(char *source, char *dest)

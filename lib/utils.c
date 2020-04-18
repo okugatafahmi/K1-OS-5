@@ -323,3 +323,7 @@ int countSector(char *buffer)
 	}
 	return ++cntRes;
 }
+
+void executeProgram(char *filename, int segment, int *success, char parentIndex) {
+	interrupt(0x21, (parentIndex << 8) | 0x6, filename, segment, success);
+}
